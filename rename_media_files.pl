@@ -54,7 +54,8 @@ while(my @row = $sth->fetchrow_array()) {
    #   print "MediaFile = ". $row[2] ."\n";
    #   next;
 
-   if ($row[2] =~ / \([0-9,A-F]+\)\./) {   
+   # if ($row[2] =~ / \([0-9,A-F]+\)\./) {   
+   if ($row[2] =~ / /) {   
       printf("\n");
       print "MediaID = ". $row[0] . "\n";
       print "MediaPath = ". $row[1] ."\n";
@@ -84,9 +85,9 @@ while(my @row = $sth->fetchrow_array()) {
       }
       printf "This many rows where returned: %0d\n", $row2_count; 
 
-      if ($row2_count ne 1) {
-         next;
-      }
+      # if ($row2_count ne 1) {
+      #    next;
+      # }
 
 
       $sth = $dbh->prepare( $stmt );
@@ -167,9 +168,58 @@ while(my @row = $sth->fetchrow_array()) {
         
 
 
-      # if ($row[0] ne 57600) {
-      #    next;
-      # }
+      if ($row[0] eq 308 || 
+          $row[0] eq 338 || 
+          $row[0] eq 459 || 
+          $row[0] eq 694 || 
+          $row[0] eq 899 || 
+          $row[0] eq 1922 || 
+          $row[0] eq 1944 || 
+          $row[0] eq 2158 || 
+          $row[0] eq 3251 || 
+          $row[0] eq 3252 || 
+          $row[0] eq 3857 || 
+          $row[0] eq 3873 || 
+          $row[0] eq 4082 || 
+          $row[0] eq 4822 || 
+          $row[0] eq 5177 || 
+          $row[0] eq 5427 || 
+          $row[0] eq 5436 || 
+          $row[0] eq 5437 || 
+          $row[0] eq 6293 || 
+          $row[0] eq 7116 || 
+          $row[0] eq 7117 || 
+          $row[0] eq 1378 || 
+          $row[0] eq 1754 || 
+          $row[0] eq 1931 || 
+          $row[0] eq 2235 || 
+          $row[0] eq 2356 || 
+          $row[0] eq 4026 || 
+          $row[0] eq 4677 || 
+          $row[0] eq 4678 || 
+          $row[0] eq 5708 || 
+          $row[0] eq 5832 || 
+          $row[0] eq 5859 || 
+          $row[0] eq 5860 || 
+          $row[0] eq 5869 || 
+          $row[0] eq 6084 || 
+          $row[0] eq 6269 || 
+          $row[0] eq 6356 || 
+          $row[0] eq 6746 || 
+          $row[0] eq 177 || 
+          $row[0] eq 178 || 
+          $row[0] eq 230 || 
+          $row[0] eq 305 || 
+          $row[0] eq 315 || 
+          $row[0] eq 441 || 
+          $row[0] eq 517 || 
+          $row[0] eq 519 || 
+          $row[0] eq 542 || 
+          $row[0] eq 704 || 
+          $row[0] eq 351) {
+         printf("Skipping this record\n");
+         next;
+      }
 
 
       # if ($row[0] eq 6089) {
