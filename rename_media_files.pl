@@ -34,6 +34,8 @@ print "Extension loaded\n";
 
 print "Opened database $database successfully\n";
 
+reindex_rmnocase();
+
 
 my $stmt = qq(SELECT MediaID, MediaPath, MediaFile, MediaType from MultimediaTable;);
 $sth = $dbh->prepare( $stmt );
@@ -334,3 +336,13 @@ $dbh->disconnect();
 
 
 exit(0);
+
+
+sub reindex_rmnocase {
+   my $stmt = qq(REINDEX RMNOCASE;);
+   my $sth = $dbh->prepare( $stmt );
+   my $rv = $sth->execute() or die $DBI::errstr;
+   if($rv < 0) {
+      print $DBI::errstr;
+   }
+}
