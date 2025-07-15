@@ -1,79 +1,52 @@
-import sqlite3
 import pandas as pd
-import os
-import sys
-import platform
-from config import DB_PATH, EXT_PATH
+from rmutils import get_connection, run_query
 
 
-# --- Platform-aware extension path ---
-system = platform.system()
+# Get DB connection (with RMNOCASE)
+conn = get_connection()
 
-# --- Platform-aware extension path ---
-ext_path = EXT_PATH
-
-# --- Set database path ---
-db_path = DB_PATH
-
-# --- Validate file presence and readability ---
-for path, label in [(db_path, "Database"), (ext_path, "Extension")]:
-    if not os.path.isfile(path):
-        sys.exit(f"❌ {label} file not found: {path}")
-    if not os.access(path, os.R_OK):
-        sys.exit(f"❌ {label} file not readable: {path}")
-
-# --- Check for empty database file ---
-if os.path.getsize(db_path) == 0:
-    sys.exit(f"❌ Database file is empty: {db_path}")
-
-# --- Connect and initialize ---
-try:
-    conn = sqlite3.connect(db_path)
-    conn.enable_load_extension(True)
-    conn.load_extension(ext_path)
-    conn.execute("REINDEX RMNOCASE;")
-except sqlite3.OperationalError as e:
-    sys.exit(f"❌ SQLite error: {e}")
-except Exception as e:
-    sys.exit(f"❌ Unexpected error: {e}")
 
 # --- Get FactTypeID for 'Birth' and 'Death' ---
-birth_fact_id = pd.read_sql_query(
-    "SELECT FactTypeID FROM FactTypeTable WHERE LOWER(Name) = 'birth'", conn
-).squeeze()
-death_fact_id = pd.read_sql_query(
-    "SELECT FactTypeID FROM FactTypeTable WHERE LOWER(Name) = 'death'", conn
-).squeeze()
+birth_fact_id_df = run_query(
+    conn, "SELECT FactTypeID FROM FactTypeTable WHERE LOWER(Name) = 'birth'"
+)
+birth_fact_id = birth_fact_id_df.iloc[0, 0]
+
+
+death_fact_id_df = run_query(
+    conn, "SELECT FactTypeID FROM FactTypeTable WHERE LOWER(Name) = 'death'"
+)
+death_fact_id = death_fact_id_df.iloc[0, 0]
 
 # --- Get birth and death events ---
-births = pd.read_sql_query(f"""
+births = run_query(conn, f"""
 SELECT OwnerID AS PersonID, Date AS BirthDate
 FROM EventTable
 WHERE OwnerType = 0 AND EventType = {birth_fact_id}
-""", conn)
+""")
 
-deaths = pd.read_sql_query(f"""
+deaths = run_query(conn, f"""
 SELECT OwnerID AS PersonID, Date AS DeathDate
 FROM EventTable
 WHERE OwnerType = 0 AND EventType = {death_fact_id}
-""", conn)
+""")
 
 # --- Get child-mother links via FamilyTable ---
-relations = pd.read_sql_query("""
+relations = run_query(conn, """
 SELECT
     c.ChildID,
     f.MotherID
 FROM ChildTable c
 JOIN FamilyTable f ON c.FamilyID = f.FamilyID
 WHERE f.MotherID IS NOT NULL
-""", conn)
+""")
 
 # --- Get primary names using OwnerID (verified against schema) ---
-names = pd.read_sql_query("""
+names = run_query(conn, """
 SELECT OwnerID AS PersonID, Given, Surname
 FROM NameTable
 WHERE IsPrimary = 1
-""", conn)
+""")
 
 # --- Merge and analyze ---
 df = relations \
@@ -119,14 +92,14 @@ print(problems[[
 
 # --- Father consistency check using same age logic ---
 # Get child-father links via FamilyTable
-father_relations = pd.read_sql_query("""
+father_relations = run_query(conn, """
 SELECT
     c.ChildID,
     f.FatherID
 FROM ChildTable c
 JOIN FamilyTable f ON c.FamilyID = f.FamilyID
 WHERE f.FatherID IS NOT NULL
-""", conn)
+""")
 
 # Merge and analyze
 df_f = father_relations \
