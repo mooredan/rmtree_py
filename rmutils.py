@@ -28,6 +28,7 @@ def get_connection():
 
     try:
         conn = sqlite3.connect(rmtree_path)
+        conn.row_factory = sqlite3.Row
         conn.enable_load_extension(True)
         conn.load_extension(extension_path)
         conn.execute("REINDEX RMNOCASE;")
@@ -42,3 +43,24 @@ def run_query(conn, sql, params=None):
         return pd.read_sql_query(sql, conn, params=params or {})
     except Exception as e:
         sys.exit(f"❌ Query failed: {e}")
+
+
+def get_primary_names(conn, person_ids=None):
+    """
+    Returns a dictionary mapping PersonID to (Given, Surname) for all primary names.
+    If person_ids is provided, restricts results to those PersonIDs.
+    """
+    base_query = """
+        SELECT OwnerID AS PersonID, Given, Surname
+        FROM NameTable
+        WHERE IsPrimary = 1
+    """
+    params = ()
+    if person_ids:
+        placeholders = ','.join('?' for _ in person_ids)
+        base_query += f" AND OwnerID IN ({placeholders})"
+        params = tuple(person_ids)
+
+    cursor = conn.execute(base_query, params)
+    return {row["PersonID"]: (row["Given"], row["Surname"]) for row in cursor.fetchall()}
+

@@ -1,14 +1,11 @@
-#!/usr/bin/env python3
-
 import sqlite3
+import signal
 
-rmfile = 'DownloadedTree.rmtree'
+# Suppress BrokenPipeError caused by piping to head or grep
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-# connect to a database
-conn = sqlite3.connect(rmfile);
-
-# Set the row_factory to sqlite3.Row
-conn.row_factory = sqlite3.Row
+# Get DB connection (with RMNOCASE)
+conn = get_connection()
 
 # Create a cursor object
 cursor = conn.cursor()
