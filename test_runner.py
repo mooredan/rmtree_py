@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import subprocess
 import sys
 from pathlib import Path
+import runpy
+import subprocess
 
-# List of finalized testable scripts (add to this list over time)
+# List of finalized testable scripts
 TEST_SCRIPTS = [
-    {"name": "check_birth_inconsistencies.py", "args": []},
-    {"name": "find_missing_media_files.py", "args": []},
-    {"name": "find_multiple_unique_facts.py", "args": []},
-    # {"name": "nickname_cleanup.py", "args": ["--dry-run"]},  # Future updater script example
+    {"name": "check_birth_inconsistencies.py", "label": "birth inconsistencies"},
+    {"name": "find_missing_media_files.py", "label": "missing files"},
+    {"name": "find_multiple_unique_facts.py", "label": "duplicate facts"},
 ]
 
 def run_test(script_info):
@@ -17,15 +17,34 @@ def run_test(script_info):
         print(f"❌ Script not found: {script_path}")
         return False
 
-    cmd = [sys.executable, str(script_path)] + script_info.get("args", [])
-    print(f"▶ Running: {' '.join(cmd)}")
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(result.stdout.strip())
+        # result = runpy.run_path(str(script_path))
+
+        if script_path.name == "find_multiple_unique_facts.py":
+            result = subprocess.run([sys.executable, str(script_path), "--summary"], capture_output=True, text=True)
+        else:
+            result = runpy.run_path(str(script_path))
+            returned = result.get("main")() if "main" in result else None
+            count = len(returned) if returned else 0
+            print(f"[{script_path.name}] {count} {script_info['label']}")
+            return True
+
+        # returned = result.get("main")() if "main" in result else None
+
+        if result.returncode == 0:
+            print(result.stdout.strip())
+            return True
+        else:
+            print(f"❌ Error in {script_path.name}:\n{result.stderr.strip()}")
+            return False
+
+
+
+        count = len(returned) if returned else 0
+        print(f"[{script_path.name}] {count} {script_info['label']}")
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error running {script_path}:")
-        print(e.stderr.strip())
+    except Exception as e:
+        print(f"❌ Error running {script_path.name}: {e}")
         return False
 
 def main():
