@@ -15,8 +15,10 @@ def get_config():
     }
 
 
-def get_connection():
-    """Returns a SQLite connection with RMNOCASE extension loaded."""
+def get_connection(read_only=False):
+    """Returns a SQLite connection with RMNOCASE extension loaded.
+    Defaults to read-only access unless read_only is set to False.
+    """
     if not os.path.isfile(rmtree_path):
         sys.exit(f"❌ Database file not found: {rmtree_path}")
     if not os.access(rmtree_path, os.R_OK):
@@ -27,12 +29,18 @@ def get_connection():
         sys.exit(f"❌ Extension file not found: {extension_path}")
 
     try:
-        conn = sqlite3.connect(rmtree_path)
+        if read_only:
+            uri = f"file:{rmtree_path}?mode=ro"
+            conn = sqlite3.connect(uri, uri=True)
+        else:
+            conn = sqlite3.connect(rmtree_path)
+
         conn.row_factory = sqlite3.Row
         conn.enable_load_extension(True)
         conn.load_extension(extension_path)
         conn.execute("REINDEX RMNOCASE;")
         return conn
+
     except Exception as e:
         sys.exit(f"❌ SQLite initialization error: {e}")
 

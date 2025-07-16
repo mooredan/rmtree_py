@@ -7,6 +7,7 @@ from pathlib import Path
 TEST_SCRIPTS = [
     {"name": "check_birth_inconsistencies.py", "args": []},
     {"name": "find_missing_media_files.py", "args": []},
+    {"name": "find_multiple_unique_facts.py", "args": []},
     # {"name": "nickname_cleanup.py", "args": ["--dry-run"]},  # Future updater script example
 ]
 
