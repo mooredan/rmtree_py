@@ -1,17 +1,22 @@
-
 import re
 import argparse
 from config import (
-        STATE_ABBREVIATIONS, 
-        OLD_STYLE_ABBR, 
-        STATE_NAMES, 
-        FOREIGN_COUNTRIES, 
-        COMMON_PLACE_MAPPINGS, 
-        MEXICAN_STATES,
-        CANADIAN_PROVINCES,
-        HISTORICAL_US_TERRITORIES
+    STATE_ABBREVIATIONS,
+    OLD_STYLE_ABBR,
+    STATE_NAMES,
+    FOREIGN_COUNTRIES,
+    COMMON_PLACE_MAPPINGS,
+    MEXICAN_STATES,
+    CANADIAN_PROVINCES,
+    HISTORICAL_US_TERRITORIES,
 )
-from rmutils import get_connection, load_county_database, standardize_us_county_name
+from rmutils import (
+    get_connection,
+    load_county_database,
+    standardize_us_county_name,
+    current_utcmoddate,
+    reverse_place_name,
+)
 
 
 # One-time load of the U.S. counties list
@@ -27,7 +32,6 @@ def normalize_once(name):
             name = replacement
             break  # Exact match found, skip further mapping
 
-
     # If 4 fields and ends with USA, remove ' County' from second field
     parts = [p.strip() for p in name.split(",")]
     if len(parts) == 4 and parts[-1].upper() == "USA":
@@ -35,13 +39,12 @@ def normalize_once(name):
             parts[1] = parts[1].replace(" County", "")
             name = ", ".join(parts)
 
-    # Capitalize first character of each field 
+    # Capitalize first character of each field
     parts = [part.strip() for part in name.split(",")]
     normalized_parts = [p[0].upper() + p[1:] if p else "" for p in parts]
     name = ", ".join(normalized_parts)
-    
-    name = name.strip()
 
+    name = name.strip()
 
     # Add missing comma before known state names (e.g., 'Twin Falls Idaho' → 'Twin Falls, Idaho')
     for state in STATE_NAMES:
@@ -56,15 +59,12 @@ def normalize_once(name):
             name = re.sub(pattern, rf"\1, {abbr}", name)
             break  # only fix once
 
-
     # Ensure comma before historical U.S. territory names
     for territory in HISTORICAL_US_TERRITORIES:
         pattern = rf"\b(.+?)\s+{re.escape(territory)}$"
         if re.search(pattern, name):
             name = re.sub(pattern, rf"\1, {territory}", name)
             break  # only one match expected
-
-
 
     # Add comma before 'Mexico' unless it's part of 'New Mexico'
     if " Mexico" in name and "New Mexico" not in name:
@@ -94,13 +94,14 @@ def normalize_once(name):
 
     # Fix state-only names like 'Virginia' → 'Virginia, USA'
     if name.strip() in STATE_NAMES:
-        name += ", USA" 
-
+        name += ", USA"
 
     # Ensure a comma precedes valid Mexican state names (excluding 'New Mexico')
     if not name.endswith("New Mexico, USA"):  # exclude legitimate U.S. state
         for state in MEXICAN_STATES:
-            if state == "México":  # special case to avoid conflict with 'Mexico' country
+            if (
+                state == "México"
+            ):  # special case to avoid conflict with 'Mexico' country
                 continue
             pattern = rf"(?<!,),\s*{state}, Mexico$"
             fixed_pattern = rf", {state}, Mexico"
@@ -108,19 +109,12 @@ def normalize_once(name):
                 name = re.sub(rf" {state}, Mexico$", fixed_pattern, name)
                 break
 
-
     # Ensure a comma precedes Canadian province names if missing
     if name.endswith(", Canada"):
         for province in CANADIAN_PROVINCES:
             if name.endswith(f" {province}, Canada"):
                 name = re.sub(rf" {province}, Canada$", rf", {province}, Canada", name)
                 break
-
-
-
-
-
-
 
     name = re.sub(r", United States of America$", ", USA", name)
     name = re.sub(r", U\.S\.A$", ", USA", name)
@@ -157,7 +151,6 @@ def normalize_once(name):
 
     # Collapse repeated whitespace
     name = re.sub(r"\s{2,}", " ", name)
-    
 
     for abbr, full in OLD_STYLE_ABBR.items():
         name = re.sub(rf"\b{re.escape(abbr)}\b", full, name)
@@ -165,15 +158,15 @@ def normalize_once(name):
     for abbr, full in STATE_ABBREVIATIONS.items():
         name = re.sub(rf",\s*{abbr}(,|$)", rf", {full}\1", name)
 
-    if any(name.endswith(", " + state) for state in STATE_NAMES) and not name.endswith(", USA"):
+    if any(name.endswith(", " + state) for state in STATE_NAMES) and not name.endswith(
+        ", USA"
+    ):
         name += ", USA"
-
 
     # If name ends with a historical US territory and does not already end in ', USA', append ', USA'
     if any(name.endswith(", " + territory) for territory in HISTORICAL_US_TERRITORIES):
         if not name.endswith(", USA"):
             name += ", USA"
-
 
     # Fix Canadian places missing a comma before the province
     for province in CANADIAN_PROVINCES:
@@ -192,7 +185,6 @@ def normalize_once(name):
     parts = [p.strip() for p in name.split(",")]
     if parts[-1] in MEXICAN_STATES and not name.endswith(", Mexiso"):
         name += ", Mexiso"
-
 
     # If 4 fields and ends with USA, remove ' County' from second field
     parts = [p.strip() for p in name.split(",")]
@@ -216,6 +208,7 @@ def normalize_once(name):
 
     return name
 
+
 def normalize_place_iteratively(name):
     previous = name
     while True:
@@ -225,16 +218,20 @@ def normalize_place_iteratively(name):
         previous = current
     return current if current != name else None
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--commit", action="store_true", help="Apply changes to the database")
-    parser.add_argument("--logfile", default="normalize_place_names.log", help="Path to log file")
+    parser.add_argument(
+        "--commit", action="store_true", help="Apply changes to the database"
+    )
+    parser.add_argument(
+        "--logfile", default="normalize_place_names.log", help="Path to log file"
+    )
     args = parser.parse_args()
 
     conn = get_connection()
     cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable")
     updates = []
-
 
     for row in cursor.fetchall():
         place_id, old_name = row["PlaceID"], row["Name"]
@@ -242,31 +239,40 @@ def main():
         if new_name:
             updates.append((place_id, old_name, new_name))
 
-
-
     if not updates:
         print("✅ No changes needed.")
         return
-    
+
     print(f"✏️  Found {len(updates)} places to normalize.")
-    
+
     # Write log
     with open(args.logfile, "w", encoding="utf-8") as log:
         for pid, old, new in updates:
             print(f"[{pid:5}] {old:<80} → {new}")
             log.write(f"[{pid}] {old} → {new}\n")
-    
+
     # Optional database commit
     if args.commit:
-        for pid, _, new in updates:
-            conn.execute("UPDATE PlaceTable SET Name = ? WHERE PlaceID = ?", (new, pid))
+        for place_id, _, new_name in updates:
+            # Update Reverse and UTCModDate when modifying the place name
+            reverse = reverse_place_name(new_name)
+            utcmoddate = current_utcmoddate()
+
+            cursor.execute(
+                """
+                UPDATE PlaceTable
+                SET Name = ?, Reverse = ?, UTCModDate = ?
+                WHERE PlaceID = ?
+                """,
+                (new_name, reverse, utcmoddate, place_id),
+            )
         conn.commit()
         print("✅ Changes committed to the database.")
     else:
         print("ℹ️  Dry run only. No changes made. Use --commit to apply.")
 
-
     conn.close()
+
 
 if __name__ == "__main__":
     main()
