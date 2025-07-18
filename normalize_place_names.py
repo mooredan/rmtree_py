@@ -46,6 +46,25 @@ def normalize_once(name):
 
     name = name.strip()
 
+    normalized = name.strip()
+
+    # Fix accidental splits in two-word U.S. state names
+    us_two_word_states = {
+        "West Virginia", "South Dakota", "North Dakota",
+        "New York", "New Jersey", "New Mexico",
+        "Rhode Island", "New Hampshire", "North Carolina", "South Carolina"
+    }
+    
+    for state in us_two_word_states:
+        parts = state.split()
+        broken = f"{parts[0]}, {parts[1]}"
+        fixed = state
+        if broken in normalized:
+            normalized = normalized.replace(broken, fixed)
+            name = normalized
+            break 
+
+
     # Add missing comma before known state names (e.g., 'Twin Falls Idaho' → 'Twin Falls, Idaho')
     for state in STATE_NAMES:
         if name.endswith(" " + state) and not name.endswith(", " + state):
@@ -83,6 +102,10 @@ def normalize_once(name):
         if name.endswith(" " + country):
             name = name[: -len(country) - 1].rstrip(", ") + ", " + country
 
+
+
+
+
     # Fix names like 'highpoint IA' → 'Highpoint, Iowa, USA'
     tokens = name.split()
     if len(tokens) == 2 and tokens[1] in STATE_ABBREVIATIONS:
@@ -91,6 +114,10 @@ def normalize_once(name):
     # Fix state-only names like 'KY' → 'Kentucky, USA'
     if name.strip() in STATE_ABBREVIATIONS:
         name = f"{STATE_ABBREVIATIONS[name.strip()]}, USA"
+
+
+
+
 
     # Fix state-only names like 'Virginia' → 'Virginia, USA'
     if name.strip() in STATE_NAMES:
@@ -158,10 +185,13 @@ def normalize_once(name):
     for abbr, full in STATE_ABBREVIATIONS.items():
         name = re.sub(rf",\s*{abbr}(,|$)", rf", {full}\1", name)
 
+
+
     if any(name.endswith(", " + state) for state in STATE_NAMES) and not name.endswith(
         ", USA"
     ):
         name += ", USA"
+
 
     # If name ends with a historical US territory and does not already end in ', USA', append ', USA'
     if any(name.endswith(", " + territory) for territory in HISTORICAL_US_TERRITORIES):
