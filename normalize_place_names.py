@@ -1,4 +1,5 @@
 import re
+import os
 import argparse
 from config import (
     STATE_ABBREVIATIONS,
@@ -12,15 +13,11 @@ from config import (
 )
 from rmutils import (
     get_connection,
-    load_county_database,
     standardize_us_county_name,
     current_utcmoddate,
     reverse_place_name,
+    fix_missing_commas_in_county_state,
 )
-
-
-# One-time load of the U.S. counties list
-COUNTY_DB = load_county_database("american_counties.csv")
 
 
 def normalize_once(name):
@@ -84,6 +81,8 @@ def normalize_once(name):
         if re.search(pattern, name):
             name = re.sub(pattern, rf"\1, {territory}", name)
             break  # only one match expected
+
+    name = fix_missing_commas_in_county_state(name)
 
     # Add comma before 'Mexico' unless it's part of 'New Mexico'
     if " Mexico" in name and "New Mexico" not in name:
@@ -232,9 +231,9 @@ def normalize_once(name):
             del parts[-3]
             name = ", ".join(parts)
 
-    # Standarize when only the county is known to a list
-    # of known USA counties
-    name = standardize_us_county_name(name, COUNTY_DB, STATE_NAMES)
+    # # Standarize when only the county is known to a list
+    # # of known USA counties
+    # name = standardize_us_county_name(name, COUNTY_DB, STATE_NAMES)
 
     return name
 

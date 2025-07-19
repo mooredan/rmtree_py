@@ -1,7 +1,7 @@
 import os
 
 rmtree_path = os.path.expanduser("~/Genealogy/ZebMoore_Ancestry.rmtree")
-extension_path = os.path.expanduser("~/Genealogy/sqlite/unifuzz.so")
+extension_path = os.path.expanduser("~/src/unifuzz/unifuzz.so")
 
 UNIQUE_FACT_TYPES = {
     1: "Birth",
@@ -12,7 +12,6 @@ UNIQUE_FACT_TYPES = {
     16: "Emigration",
     17: "Immigration",
 }
-
 
 # ----------------------------------
 # U.S. State Reference Data
@@ -145,11 +144,13 @@ OLD_STYLE_ABBR = {
     "Nebra": "Nebraska",
     "Tennessce": "Tennessee",
     "Tenn": "Tennessee",
+    "Minn": "Minnesota",
     "Oiho": "Ohio",
     "West VA": "West Virginia",
     "Wash": "Washington",
     "D. C": "District of Columbia",
     "Colora": "Colorado",
+    "Misssori": "Missouri",
 }
 
 STATE_NAMES = set(STATE_ABBREVIATIONS.values())
@@ -489,3 +490,31 @@ COMMON_PLACE_MAPPINGS = {
     "Welda": "Welda, Anderson, Kansas, USA",
     "Williamsfield": "Williamsfield, Knox, Illinois, USA",
 }
+
+# Common street suffixes and directional tokens
+STREET_SUFFIXES = [
+    "Ave", "Avenue", "St", "Street", "Blvd", "Road", "Rd", "Drive", "Dr",
+    "Ln", "Lane", "Terrace", "Way", "Place", "Pl", "Court", "Ct", "Loop",
+    "Circle", "Crescent", "Parkway", "Pkwy", "Trail", "Trl", "Hwy", "Highway"
+]
+
+def load_us_counties(filename="us_counties.txt"):
+    """Load county-state pairs from a pipe-delimited file into a list of tuples."""
+    counties = []
+    base_path = os.path.dirname(__file__)
+    path = os.path.join(base_path, filename)
+
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split("|")
+            if len(parts) == 2:
+                counties.append((parts[0], parts[1]))
+    return counties
+
+
+# Make available globally in config
+US_COUNTIES = load_us_counties()
+
+
+
+
