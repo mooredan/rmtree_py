@@ -23,6 +23,13 @@ from config import (
     HISTORICAL_US_TERRITORIES,
 )
 
+from normalizer import (
+    normalize_once,
+    strip_address_if_present,
+    is_nonsensical_place_name
+)
+
+
 def get_config():
     import config  # This is your separate config.py file
 
@@ -190,28 +197,27 @@ def merge_place_records(conn, canonical_id, duplicate_id, dry_run=True):
     return len(differing_fields) > 0  # True = conflict exists
 
 
-def standardize_us_county_name(name, counties_db, state_list):
+
+def get_place_name_from_id(conn: sqlite3.Connection, place_id):
     """
-    Normalize U.S. county-style place names to the form:
-    <county> County, <state>, USA
+    Get Name of a place from PlaceID.
     """
-    parts = [p.strip() for p in name.split(",")]
-    if len(parts) != 3:
-        return name  # Not a candidate
+    cursor = conn.execute(
+        """
+        SELECT Name FROM PlaceTable
+        WHERE PlaceID = ?
+        """, (place_id,),
+    )
 
-    county_candidate, state, country = parts
-    if country.upper() != "USA":
-        return name
-    if state not in state_list:
-        return name
+    row = cursor.fetchone()
 
-    lookup = (f"{county_candidate} county".lower(), state.lower())
-    for county, county_state in counties_db:
-        if (county, county_state) == lookup:
-            # Return properly capitalized replacement
-            return f"{county_candidate} County, {state}, USA"
+    if row is None:
+        print(f"❌ No such PlaceID: {place_id} found.")
+        return {}
 
-    return name  # No match found
+    name = row[0]
+    return name
+
 
 
 def show_place_details(conn: sqlite3.Connection, place_id: int) -> dict:
@@ -248,11 +254,6 @@ def current_utcmoddate():
     delta = now - epoch
     return delta.total_seconds() / 86400.0  # Convert seconds to days
 
-
-def reverse_place_name(name: str) -> str:
-    """Reverse the order of comma-separated fields in a place name."""
-    parts = [part.strip() for part in name.split(",")]
-    return ", ".join(reversed(parts))
 
 
 def find_duplicate_place_names(conn: sqlite3.Connection):
@@ -381,457 +382,6 @@ def get_place_details(conn, place_id):
         return [], None
 
 
-def fix_missing_commas_in_county_state(name: str) -> str:
-    """
-    Fix entries like "Edinburg Shenandoah, Virginia, USA" to "Edinburg, Shenandoah, Virginia, USA"
-    by inserting a missing comma between city and county.
-    """
-    parts = name.split(",")
-    if len(parts) < 2:
-        return name  # Nothing to fix
-
-    head = parts[0].strip()
-    tail = ",".join(p.strip() for p in parts[1:])
-
-    for county, state in US_COUNTIES:
-        test_suffix = f"{county}, {state}"
-        if tail.startswith(test_suffix):
-            if head.endswith(county):
-                # Already something like "Edinburg Shenandoah"
-                fixed_head = head.replace(f" {county}", f", {county}")
-                return f"{fixed_head}, {tail}"
-    return name
-
-
-
-
-
-def normalize_once(pid, name):
-
-    # Check for exact match in COMMON_PLACE_MAPPINGS
-    key = name.strip()
-    for pattern, replacement in COMMON_PLACE_MAPPINGS.items():
-        if key == pattern:
-            name = replacement
-            break  # Exact match found, skip further mapping
-
-    # If 4 fields and ends with USA, remove ' County' from second field
-    parts = [p.strip() for p in name.split(",")]
-    if len(parts) == 4 and parts[-1].upper() == "USA":
-        if " County" in parts[1]:
-            parts[1] = parts[1].replace(" County", "")
-            name = ", ".join(parts)
-
-    # Capitalize first character of each field
-    parts = [part.strip() for part in name.split(",")]
-    normalized_parts = [p[0].upper() + p[1:] if p else "" for p in parts]
-    name = ", ".join(normalized_parts)
-
-    name = name.strip()
-
-    normalized = name.strip()
-
-    # Fix accidental splits in two-word U.S. state names
-    us_two_word_states = {
-        "West Virginia", "South Dakota", "North Dakota",
-        "New York", "New Jersey", "New Mexico",
-        "Rhode Island", "New Hampshire", "North Carolina", "South Carolina"
-    }
-    
-    for state in us_two_word_states:
-        parts = state.split()
-        broken = f"{parts[0]}, {parts[1]}"
-        fixed = state
-        if broken in normalized:
-            normalized = normalized.replace(broken, fixed)
-            name = normalized
-            break 
-
-
-
-    # Strip an address if present
-    # this needs to be done *before*
-    # checking if an address in the "NOPLACENAME" routines below 
-    name, addr = strip_address_if_present(name, pid)
-    if addr:
-        # Optionally: save the stripped address somewhere (log, dict, etc.)
-        # handling this is future work
-        print(f"📍 PlaceID {pid} had its address: \"{addr}\" stripped, new name: \"{name}\"")
-
-
-    # when a place name is just a single character, remove it
-    # making it a null string, another routine will delete the record
-    # and update referencing records
-    parts = [p.strip() for p in name.split(",")]
-    if len(parts) == 1:
-        if len(parts[0]) < 2:
-           return "NOPLACENAME"
-
-    original = name.strip()
-    
-    if len(original) <= 1:
-        return "NOPLACENAME"
-    
-    # 1. Starts with number followed by common address pattern
-    if re.match(r'^\d+\s+\w+', original):
-        if re.search(r'\b(St|Ave|Blvd|Rd|Ln|Dr|Ct|Way|Circle|Pl|Terrace)\b', original, re.IGNORECASE):
-            print(f"📍 PlaceID {pid} contains an address: \"{original}\", it will be marked for deletion")
-            # maybe handle this later to prevent data bus
-            return "NOPLACENAME"
-
-    # 2. High digit ratio
-    digit_ratio = sum(c.isdigit() for c in original) / max(len(original), 1)
-    if digit_ratio > 0.5:
-        return "NOPLACENAME"
-
-    # 3. Obvious placeholders
-    if original.lower() in {"unknown", "n/a", "-", ".", "..."}:
-        return "NOPLACENAME"
-
-    # 4. No alphabetic characters
-    if not any(c.isalpha() for c in original):
-        return "NOPLACENAME"
-
-
-
-    # Normalize PLSS-like entries
-    name = re.sub(
-        r'\bT(?:wp)?\s*(\d+)([NS])\s*R\s*(\d+)([EW])\b',
-        r'Township \1\2 Range \3\4',
-        name
-    )
-
-
-    # Strip "Township" from first field if in valid US state (except NJ, PA) and not a survey-style township
-    lines = name.split(",")
-    if len(lines) >= 3:
-        state = lines[-2].strip()
-        country = lines[-1].strip()
-        first_field = lines[0].strip()
-
-        if (
-            country == "USA"
-            and state in STATE_NAMES
-            and state not in {"New Jersey", "Pennsylvania"}
-            and "Township" in first_field
-            and not re.search(r'\bTownship\s+\d+.*\bRange\b', first_field, re.IGNORECASE)
-        ):
-            # Remove "Township" and any trailing comma
-            new_first = re.sub(r'\bTownship\b[,]?\s*', '', first_field).strip()
-            lines[0] = new_first
-            name = ", ".join([part.strip() for part in lines])
-            return name  # Safe early return
-
-
-
-    # Add missing comma before known state names (e.g., 'Twin Falls Idaho' → 'Twin Falls, Idaho')
-    for state in STATE_NAMES:
-        if name.endswith(" " + state) and not name.endswith(", " + state):
-            name = re.sub(rf" (?!.*, ){state}$", f", {state}", name)
-            break  # Only apply to one state match
-
-    # Insert comma before state abbreviation if missing
-    for abbr in STATE_ABBREVIATIONS:
-        pattern = rf"\b(.+?)\s+{abbr}$"
-        if re.search(pattern, name):
-            name = re.sub(pattern, rf"\1, {abbr}", name)
-            break  # only fix once
-
-    # Ensure comma before historical U.S. territory names
-    for territory in HISTORICAL_US_TERRITORIES:
-        pattern = rf"\b(.+?)\s+{re.escape(territory)}$"
-        if re.search(pattern, name):
-            name = re.sub(pattern, rf"\1, {territory}", name)
-            break  # only one match expected
-
-    name = fix_missing_commas_in_county_state(name)
-
-    # Add comma before 'Mexico' unless it's part of 'New Mexico'
-    if " Mexico" in name and "New Mexico" not in name:
-        name = re.sub(r"(?<!New) Mexico", r", Mexico", name)
-
-    # Remove 3–5 letter uppercase prefixes (e.g., "KYRO - ", "NYCA - ")
-    name = re.sub(r"^[A-Z]{4,5} - ", "", name)
-    name = re.sub(r"^[A-Z]{4}[0-9] - ", "", name)
-    name = re.sub(r"^[A-Z]{3} - ", "", name)
-
-    # Remove lone trailing period
-    name = re.sub(r"\.\s*$", "", name)
-
-    # Insert comma before known country names if missing
-    for country in FOREIGN_COUNTRIES:
-        if name.endswith(" " + country):
-            name = name[: -len(country) - 1].rstrip(", ") + ", " + country
-
-
-
-
-
-    # Fix names like 'highpoint IA' → 'Highpoint, Iowa, USA'
-    tokens = name.split()
-    if len(tokens) == 2 and tokens[1] in STATE_ABBREVIATIONS:
-        name = f"{tokens[0]}, {STATE_ABBREVIATIONS[tokens[1]]}, USA"
-
-    # Fix state-only names like 'KY' → 'Kentucky, USA'
-    if name.strip() in STATE_ABBREVIATIONS:
-        name = f"{STATE_ABBREVIATIONS[name.strip()]}, USA"
-
-
-
-
-
-    # Fix state-only names like 'Virginia' → 'Virginia, USA'
-    if name.strip() in STATE_NAMES:
-        name += ", USA"
-
-    # Ensure a comma precedes valid Mexican state names (excluding 'New Mexico')
-    if not name.endswith("New Mexico, USA"):  # exclude legitimate U.S. state
-        for state in MEXICAN_STATES:
-            if (
-                state == "México"
-            ):  # special case to avoid conflict with 'Mexico' country
-                continue
-            pattern = rf"(?<!,),\s*{state}, Mexico$"
-            fixed_pattern = rf", {state}, Mexico"
-            if name.endswith(f" {state}, Mexico"):
-                name = re.sub(rf" {state}, Mexico$", fixed_pattern, name)
-                break
-
-    # Ensure a comma precedes Canadian province names if missing
-    if name.endswith(", Canada"):
-        for province in CANADIAN_PROVINCES:
-            if name.endswith(f" {province}, Canada"):
-                name = re.sub(rf" {province}, Canada$", rf", {province}, Canada", name)
-                break
-
-
-    # ───────────────────────────────────────────────
-    # 🧹 Strip parenthetical text like (Independent City), (new), (7 yrs), etc.
-    # Apply only once, before other cleanup
-    name = re.sub(r"\s*\([^()]*\)", "", name)  # remove parentheses and enclosed text
-    name = re.sub(r"\s{2,}", " ", name).strip(",. ")  # clean excess spaces and trailing punctuation
-
-
-
-    name = re.sub(r", United States of America$", ", USA", name)
-    name = re.sub(r", U\.S\.A$", ", USA", name)
-    name = re.sub(r", U\.S\.A\.$", ", USA", name)
-    name = re.sub(r", U\.S\.$", ", USA", name)
-    name = re.sub(r", United States$", ", USA", name)
-    name = re.sub(r"^,\s*", "", name)
-    name = re.sub(r",+$", "", name)
-    name = re.sub(r",\s*,", ",", name)
-    name = re.sub(r",\s*", ", ", name)
-    name = re.sub(r" \d{5},", "", name)
-    name = re.sub(r" Co\.", " County", name)
-    name = re.sub(r"Co ", "County ", name)
-    name = re.sub(r" Co,", " County,", name)
-    name = re.sub(r" Co$", " County", name)
-    name = re.sub(r" Coun,", " County,", name)
-    name = re.sub(r"^County, ", "County ", name)
-    name = re.sub(r"([A-Z,a-z,0-9])&([A-Z,a-z,0-9])", r"\1 & \2", name)
-    name = re.sub(r"^Rural, ", "", name)
-    name = re.sub(r"\(Chicago\)", "", name)
-    name = re.sub(r" Ward [0-9],", ",", name)
-    name = re.sub(r" Ward [0-9][0-9],", ",", name)
-    name = re.sub(r"^District [0-9], ", "", name)
-    name = re.sub(r"^District [0-9][0-9], ", "", name)
-    name = re.sub(r" Twp,", ",", name)
-    name = re.sub(r" Twp.,", ",", name)
-    name = re.sub(r"^Magisterial ", "", name)
-    name = re.sub(r" Assembly District [0-9],", ",", name)
-    name = re.sub(r" Assembly District [0-9][0-9],", ",", name)
-    name = re.sub(r"^District No [0-9], ", "", name)
-    name = re.sub(r"^District No [0-9][0-9], ", "", name)
-    name = re.sub(r"^Township [0-9], ", "", name)
-    name = re.sub(r"^Township [0-9][0-9], ", "", name)
-    name = re.sub(r"^Precinct [0-9], ", "", name)
-    name = re.sub(r"^Precinct [0-9][0-9], ", "", name)
-    name = re.sub(r" Irland$", " Ireland", name)
-    name = re.sub(r"^Mag District No [0-9], ", "", name)
-    name = re.sub(r"^Mag District No [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag Dist No [0-9], ", "", name)
-    name = re.sub(r"^Mag Dist No [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag D No [0-9], ", "", name)
-    name = re.sub(r"^Mag D No [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag District [0-9], ", "", name)
-    name = re.sub(r"^Mag District [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag Dist [0-9], ", "", name)
-    name = re.sub(r"^Mag Dist [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag D [0-9], ", "", name)
-    name = re.sub(r"^Mag D [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag District \# [0-9], ", "", name)
-    name = re.sub(r"^Mag District \# [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag Dist \# [0-9], ", "", name)
-    name = re.sub(r"^Mag Dist \# [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag D \# [0-9], ", "", name)
-    name = re.sub(r"^Mag D \# [0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag District \#[0-9], ", "", name)
-    name = re.sub(r"^Mag District \#[0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag Dist \#[0-9], ", "", name)
-    name = re.sub(r"^Mag Dist \#[0-9][0-9], ", "", name)
-    name = re.sub(r"^Mag D \#[0-9], ", "", name)
-    name = re.sub(r"^Mag D \#[0-9][0-9], ", "", name)
-    name = re.sub(r"Fraanklin, ", "Franklin, ", name)
-    name = re.sub(r"Bethlehm, ", "Bethlehem, ", name)
-    name = re.sub(r"Abingon, ", "Abingdon, ", name)
-    name = re.sub(r"Grrenv", "Grenv", name)
-    name = re.sub(r"Los Angles", "Los Angeles", name)
-    name = re.sub(r"Indianapoli,", "Indianapolis,", name)
-    name = re.sub(r"St Louis", "St. Louis", name)
-    name = re.sub(r'\bSaint\s+(?=\w)', 'St. ', name)
-    name = re.sub(r'\bSt\s+(?=\w)', 'St. ', name)
-    name = re.sub(r'\bPrince Georges\b', "Prince George's", name)
-
-
-
-    # Remove parenthetical prefixes like "City (Districts 1234-5678), ..."
-    name = re.sub(r'^[^,]*\([^)]*\),\s*', '', name)
-
-    # Remove leading parenthetical if followed by duplicate city
-    name = re.sub(
-        r'^\s*\((.*?)\),\s*(\w[\w\s.-]+?),\s*(.+)$',
-        lambda m: f"{m.group(2)}, {m.group(3)}" if m.group(2).lower() in m.group(3).lower() else m.group(0),
-        name
-    )
-
-
-    # Get County in the middle fixed
-    name = re.sub(r" County ", " County, ", name)
-
-    # Remove lone periods (again)
-    name = re.sub(r"\s+\.\s+", " ", name)
-
-    # Remove double commas and extra spaces between them
-    name = re.sub(r",\s*,", ", ", name)
-
-    # Remove trailing lone periods (e.g., "Oklahoma.")
-    name = re.sub(r"\.\s*$", "", name)
-
-    # Remove trailing commas (if still remaining)
-    name = re.sub(r",\s*$", "", name)
-
-    # Collapse repeated whitespace
-    name = re.sub(r"\s{2,}", " ", name)
-
-    for abbr, full in OLD_STYLE_ABBR.items():
-        name = re.sub(rf"\b{re.escape(abbr)}\b", full, name)
-
-    for abbr, full in STATE_ABBREVIATIONS.items():
-        name = re.sub(rf",\s*{abbr}(,|$)", rf", {full}\1", name)
-
-
-
-    if any(name.endswith(", " + state) for state in STATE_NAMES) and not name.endswith(
-        ", USA"
-    ):
-        name += ", USA"
-
-
-    # If name ends with a historical US territory and does not already end in ', USA', append ', USA'
-    if any(name.endswith(", " + territory) for territory in HISTORICAL_US_TERRITORIES):
-        if not name.endswith(", USA"):
-            name += ", USA"
-
-    # Fix Canadian places missing a comma before the province
-    for province in CANADIAN_PROVINCES:
-        pattern = rf"\b({province})$"
-        if re.search(pattern, name, re.IGNORECASE):
-            if f", {province}" not in name:
-                # Insert comma before the province
-                name = re.sub(rf"\s+{province}$", rf", {province}", name)
-
-    # If ends with a known Canadian province but not ", Canada", append it
-    parts = [p.strip() for p in name.split(",")]
-    if parts[-1] in CANADIAN_PROVINCES and not name.endswith(", Canada"):
-        name += ", Canada"
-
-    # If ends with a known Mexican state but not ", Mexico", append it
-    parts = [p.strip() for p in name.split(",")]
-    if parts[-1] in MEXICAN_STATES and not name.endswith(", Mexiso"):
-        name += ", Mexiso"
-
-    # If 4 fields and ends with USA, remove ' County' from second field
-    parts = [p.strip() for p in name.split(",")]
-    if len(parts) == 4 and parts[-1].upper() == "USA":
-        if " County" in parts[1]:
-            parts[1] = parts[1].replace(" County", "")
-            name = ", ".join(parts)
-
-    # Fix repeated state name before 'USA'
-    parts = [p.strip() for p in name.split(",")]
-    if len(parts) >= 4 and parts[-1] == "USA":
-        # Check if the second-to-last and third-to-last parts are the same
-        if parts[-2].lower() == parts[-3].lower():
-            # Remove the redundant part
-            del parts[-3]
-            name = ", ".join(parts)
-
-    # # Standarize when only the county is known to a list
-    # # of known USA counties
-    # name = standardize_us_county_name(name, COUNTY_DB, STATE_NAMES)
-
-    return name
-
-
-def normalize_place_iteratively(pid, name):
-    previous = name
-    while True:
-        current = normalize_once(pid, previous)
-        if current == previous:
-            break
-        previous = current
-    return current if current != name else None
-
-
-def normalize_place_names(conn: sqlite3.Connection, dry_run=True):
-
-    cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable")
-    updates = []
-
-    for row in cursor.fetchall():
-        place_id, old_name = row["PlaceID"], row["Name"]
-        new_name = normalize_place_iteratively(place_id, old_name)
-        if new_name:
-            if new_name == "NOPLACENAME":
-                print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be deleted ...")
-                delete_place_id(conn, place_id, dry_run)
-            else:
-                updates.append((place_id, old_name, new_name))
-          
-
-    if not updates:
-        print("✅ No changes needed.")
-        return
-
-    print(f"✏️  Found {len(updates)} places to normalize.")
-
-    # # Write log
-    # with open(args.logfile, "w", encoding="utf-8") as log:
-    #     for pid, old, new in updates:
-    #         print(f"[{pid:5}] {old:<80} → {new}")
-    #         log.write(f"[{pid}] {old} → {new}\n")
-
-    # Optional database commit
-    if not dry_run:
-        for place_id, _, new_name in updates:
-            # Update Reverse and UTCModDate when modifying the place name
-            reverse = reverse_place_name(new_name)
-            utcmoddate = current_utcmoddate()
-
-            cursor.execute(
-                """
-                UPDATE PlaceTable
-                SET Name = ?, Reverse = ?, UTCModDate = ?
-                WHERE PlaceID = ?
-                """,
-                (new_name, reverse, utcmoddate, place_id),
-            )
-        conn.commit()
-        print("✅ Changes committed to the database.")
-    else:
-        print("ℹ️  Dry run only. No changes made. Use dry_run=False to apply.")
-
 
 
 ########################################################
@@ -948,60 +498,91 @@ def table_has_column(cursor, table_name, column_name):
 
 
 
-# Ensure longer suffixes match first
-# STREET_SUFFIXES = sorted(STREET_SUFFIXES, key=lambda s: -len(s))
-
-
-# DIRECTIONALS = ["N", "S", "E", "W", "NE", "NW", "SE", "SW"]
-
-# # Compile regex for known address pattern
-# ADDRESS_PATTERN = re.compile(
-#     r"""^                    # start of string
-#     \d+[\w\-]*               # street number (with optional letter/number)
-#     (?:\s+[NESW]{{1,2}})?    # optional directional (escaped curly braces)
-#     (?:\s+\w+)+              # street name
-#     (?:\s+(?:{}))\.?         # street type
-#     """.format("|".join(STREET_SUFFIXES)),
-#     re.IGNORECASE | re.VERBOSE
-# )
-
-
-def strip_address_if_present(name: str, pid: int) -> tuple[str, str | None]:
+def report_non_normalized_places(conn, limit: int = 1000):
     """
-    Attempts to strip a street address from the beginning of a place name.
-    Returns the updated name and the stripped address if found.
+    Scans PlaceTable and reports place names that appear non-normalized,
+    such as:
+      - all upper or all lower case
+      - extra punctuation
+      - trailing/leading whitespace
+      - missing commas between jurisdiction levels
+      - names with unusual characters or numeric-only
+      - excessive repetition or patterns
     """
-    original_name = name
+    cursor = conn.cursor()
+    cursor.execute("SELECT PlaceID, Name FROM PlaceTable ORDER BY Name COLLATE NOCASE")
 
-    # Sort suffixes longest-first to avoid partial matches (e.g. "St" matching "Street")
-    from config import STREET_SUFFIXES
-    suffixes_sorted = sorted(STREET_SUFFIXES, key=lambda s: -len(s))
-    suffix_pattern = r'\b(?:' + '|'.join(re.escape(s) for s in suffixes_sorted) + r')\b'
+    import re
 
-    # Example matches: "123 Main St.", "1209 21st Ave, Rock Island", "40500 119th St, Genoa City, WI"
-    pattern = re.compile(
-        r'^\s*'                                 # Leading spaces
-        r'(?P<addr>\d{1,6}(?:\s+\w+){0,4})\s+'  # Address number and street words (up to 4)
-        + suffix_pattern +                     # A valid suffix
-        r'(?:\s*\.\s*|\s*,\s*|\s+)'            # Separator (dot/comma/space)
-        r'(?P<tail>.*)$',                      # Remainder of the name
-        flags=re.IGNORECASE
-    )
+    bad_places = []
+    for pid, name in cursor.fetchall():
+        reasons = []
 
-    match = pattern.match(name)
-    if match:
-        # Capture the address and remainder
-        prefix = match.group('addr').strip()
-        suffix_match = pattern.pattern[pattern.pattern.find('(?:'):]  # For clarity only
-        # We extract from the match string directly
-        full_address = match.group(0)[:match.end('addr')].strip()
-        address = full_address
-        tail = match.group('tail').strip()
-        new_name = tail if tail else "NOPLACENAME"
+        parts = [p.strip() for p in name.split(",")]
 
-        print(f"📍 PlaceID {pid} \"{original_name}\" had its address: \"{address}\" stripped, new name: \"{new_name}\"")
-        return new_name, address
 
-    return name, None
+
+        if not name.strip():
+            reasons.append("empty or whitespace")
+
+        if name != name.strip():
+            reasons.append("leading/trailing whitespace")
+
+        if name.isupper():
+            reasons.append("all UPPERCASE")
+
+        if name.islower():
+            reasons.append("all lowercase")
+
+        if re.match(r'^[0-9 ,.-]+$', name):
+            reasons.append("numeric or punctuation only")
+
+
+
+
+        if re.search(r'[!?@#$%^&*+=<>]', name):
+            reasons.append("unusual characters")
+
+        if re.search(r'\b(?:unknown|unkown|none|blank)\b', name, re.IGNORECASE):
+            reasons.append("unknown placeholder")
+
+        if name.count(',') == 0 and ' ' in name and not name.endswith('.'):
+            reasons.append("missing commas between jurisdiction levels?")
+
+
+        # if re.search(r'\b(\w+)\b(?:,\s*)?\s+\1\b', name, re.IGNORECASE):
+            # reasons.append("duplicated word")
+
+
+        # first two parts are the same 
+        if len(parts) > 1:
+            if parts[0] == parts[1]:
+                reasons.append("first two fields identical")
+
+
+        for part in parts:
+            if re.match(r'^[0-9 ,.-]+$', part):
+                reasons.append("numeric or punctuation only in any field")
+
+
+
+        if '  ' in name:
+            reasons.append("double spaces")
+
+        if '()' in name or '(unknown)' in name.lower():
+            reasons.append("empty or unknown parentheses")
+
+        if reasons:
+            bad_places.append((pid, name, "; ".join(reasons)))
+
+        if len(bad_places) >= limit:
+            break
+
+    if bad_places:
+        print(f"\n🚩 Found {len(bad_places)} potentially non-normalized place names:")
+        for pid, name, reason in bad_places:
+            print(f"  [{pid}] {name}  ⟶  {reason}")
+    else:
+        print("✅ No suspicious place names detected.")
 
 

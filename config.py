@@ -495,8 +495,9 @@ COMMON_PLACE_MAPPINGS = {
 STREET_SUFFIXES = [
     "Ave", "Avenue", "St", "Street", "Blvd", "Road", "Rd", "Drive", "Dr",
     "Ln", "Lane", "Terrace", "Way", "Place", "Pl", "Court", "Ct", "Loop",
-    "Circle", "Crescent", "Parkway", "Pkwy", "Trail", "Trl", "Hwy", "Highway"
+    "Circle", "Crescent", "Parkway", "Pkwy", "Trail", "Trl", "Hwy", "Highway",
 ]
+#    "South", "West", "North", "East", "SW", "N", "SE", "NE", "NW",
 
 def load_us_counties(filename="us_counties.txt"):
     """Load county-state pairs from a pipe-delimited file into a list of tuples."""
