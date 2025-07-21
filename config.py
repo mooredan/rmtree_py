@@ -481,6 +481,7 @@ COMMON_PLACE_MAPPINGS = {
     "Shasta": "Shasta County, California, USA",
     "Spartanburg": "Spartanburg County, South Carolina, USA",
     "Succasunna": "Succasunna, Morris, New Jersey, USA",
+    "Tacoma": "Tacoma, Pierce, Washington, USA",
     "Terre Haute": "Terre Haute, Indiana, USA",
     "Tippecanoe": "Tippecanoe County, Indiana, USA",
     "Topeka": "Topeka, Shawnee, Kansas, USA",

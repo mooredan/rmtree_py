@@ -8,7 +8,11 @@ from rmutils import (
     delete_blank_place_records,
     report_non_normalized_places,
     merge_places,
-    get_place_name_from_id
+    get_place_name_from_id,
+    dump_place_usage,
+    is_place_referenced,
+    get_all_place_ids,
+    delete_place_id,
 )
 
 from normalizer import (
@@ -111,31 +115,30 @@ def devel():
     conn = get_connection()
 
     # # test_strip_address_by_pid(conn, 4906)
-    # # test_strip_address_by_pid(conn, 5715)
-    # # test_strip_address_by_pid(conn, 5867)
-    # # test_strip_address_by_pid(conn, 5837)
-    # # test_strip_address_by_pid(conn, 1200)
-    # # test_strip_address_by_name(conn, "410 N. Euclid")
     # test_strip_address_by_name(conn, "511 E. North St.")
-    # test_strip_address_by_name(conn, "511 E. North St")
-    # test_strip_address_by_name(conn, "511 E. North St, Galesburg")
-    # test_strip_address_by_name(conn, "511 E. North")
-    # test_strip_address_by_name(conn, "511 East North")
-    # test_strip_address_by_name(conn, "511 East North Street")
-    # test_strip_address_by_name(conn, "511 East North St")
-    # test_strip_address_by_name(conn, "15378 Summerview Dr SW")
-    # test_strip_address_by_name(conn, "15378 Summerview Dr SW, Tigard, OR")
-    # test_strip_address_by_name(conn, "15378 Summerview Dr. SW, Tigard, OR")
     # return
 
     # rtn = test_addresses()
     # return
 
-    # for place_id in {5837, 4582, 6034, 4906}:
-    #    # place_id = 4446 
+    # for place_id in {5837, 4582, 6034, 4906, 4354, 4975, 5185, 476, 2678}:
     #    test_pid(conn, place_id)
-
     # return
+
+
+    place_ids = get_all_place_ids(conn)
+    unused_count = 0
+    for pid in place_ids:
+        # Do something with each PlaceID
+        if not is_place_referenced(conn, pid, quiet=True):
+            unused_count += 1
+            name = get_place_name_from_id(conn, pid)
+            print(f"This PlaceID {pid} is not referenced: name: \"{name}\"")
+            dump_place_usage(conn, pid)
+            delete_place_id(conn, pid, dry_run=False, brief=True)
+
+    print(f"{unused_count} PlaceIDs were not used and deleted")
+    return
 
     # do our best at renaming PlaceTable names
     normalize_place_names(conn, dry_run=False)
@@ -145,10 +148,10 @@ def devel():
     # Find PlaceIDs where the place name is identical
     dupes = find_duplicate_place_names(conn)
     num_dupes = len(dupes)
-    print(f"duplicates found: {num_dupes}\n")
+    print(f"Number of duplicates found: {num_dupes}\n")
 
     # let's merge those
-    merge_places(conn, dupes, dry_run=False)
+    merge_places(conn, dupes, dry_run=False, brief=True)
 
     # what is left over?
     report_non_normalized_places(conn)

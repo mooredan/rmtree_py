@@ -99,7 +99,7 @@ def get_primary_names(conn, person_ids=None):
     }
 
 
-def merge_place_records(conn, canonical_id, duplicate_id, dry_run=True):
+def merge_place_records(conn, canonical_id, duplicate_id, dry_run=True, brief=True):
     if canonical_id == duplicate_id:
         raise ValueError("Canonical and duplicate IDs must differ.")
 
@@ -126,11 +126,14 @@ def merge_place_records(conn, canonical_id, duplicate_id, dry_run=True):
     if not canonical_row or not duplicate_row:
         raise ValueError("One or both PlaceIDs do not exist.")
 
-    print(f"\n🔁 Merging PlaceID {duplicate_id} → {canonical_id}")
+    if not brief:
+        print(f"    🔁 Merging PlaceID {duplicate_id} → {canonical_id}")
     if dry_run:
         print("Dry-run mode: no changes will be written.")
 
-    print("\n📋 Comparing PlaceTable fields:")
+    if not brief:
+       print("        📋 Comparing PlaceTable fields:")
+
     differing_fields = []
     cursor.execute("PRAGMA table_info(PlaceTable)")
     columns = [col[1] for col in cursor.fetchall()]
@@ -141,19 +144,23 @@ def merge_place_records(conn, canonical_id, duplicate_id, dry_run=True):
         val2 = duplicate_row[idx]
         if val1 != val2:
             differing_fields.append(field)
-            print(f" ⚠️ {field}:")
-            print(f"    Canonical: {repr(val1)}")
-            print(f"    Duplicate: {repr(val2)}")
+            if not brief:
+                print(f"           ⚠️ {field}:")
+                print(f"              Canonical: {repr(val1)}")
+                print(f"              Duplicate: {repr(val2)}")
 
     if not differing_fields:
-        print(" ✅ All fields match.")
+        if not brief:
+            print("        ✅ All fields match.")
 
     # Update referencing tables with direct PlaceID FK
     for table, col in referencing_tables.items():
         cursor.execute(f"SELECT COUNT(*) FROM {table} WHERE {col} = ?", (duplicate_id,))
         count = cursor.fetchone()[0]
         if count > 0:
-            print(f" → Would update {count} row(s) in {table}.{col}")
+            if not brief:
+                print(f" → Would update {count} row(s) in {table}.{col}")
+
             if not dry_run:
                 utcmoddate = current_utcmoddate()
                 update_sql = f"""
@@ -188,10 +195,13 @@ def merge_place_records(conn, canonical_id, duplicate_id, dry_run=True):
     # Delete the duplicate place
     if not dry_run:
         cursor.execute("DELETE FROM PlaceTable WHERE PlaceID = ?", (duplicate_id,))
-        print(" ✅ Duplicate place deleted.")
+        if not brief:
+            print(" ✅ Duplicate place deleted.")
+
         conn.commit()
 
-    print("✅ Merge complete." if not dry_run else "ℹ️ Dry-run complete.")
+    if not brief:
+        print("✅ Merge complete." if not dry_run else "ℹ️ Dry-run complete.")
 
     # Return whether a conflict was encountered
     return len(differing_fields) > 0  # True = conflict exists
@@ -256,7 +266,7 @@ def current_utcmoddate():
 
 
 
-def find_duplicate_place_names(conn: sqlite3.Connection):
+def find_duplicate_place_names(conn: sqlite3.Connection, brief=True):
     """
     return a collection of PlaceIDs where the Name matches
     """
@@ -274,7 +284,7 @@ def find_duplicate_place_names(conn: sqlite3.Connection):
     return duplicates
 
 
-def merge_places(conn: sqlite3.Connection, dupes, dry_run=True):
+def merge_places(conn: sqlite3.Connection, dupes, dry_run=True, brief=True):
     """
     Merge PlaceTable records by replacing references to duplicates
     with a canonical PlaceID and removing the duplicates.
@@ -285,21 +295,24 @@ def merge_places(conn: sqlite3.Connection, dupes, dry_run=True):
 
     critical_conflicts = []
 
-    print("🧭 Exact Duplicate Place Names:\n")
+    print("\n🧭 Exact Duplicate Place Names:")
     for group in dupes.values():
         if len(group) < 2:
             continue  # skip trivial cases
 
-        print(f"📍 {group[0][1]}")
+        if not brief:
+            print(f"    📍 {group[0][1]}")
 
         survivor = group[0]
         survivor_id = survivor[0]
 
         for victim in group[1:]:
             victim_id = victim[0]
-            print(f"🧬 Merging into PlaceID {survivor_id} from {victim_id}")
+            if not brief:
+                print(f"    🧬 Merging into PlaceID {survivor_id} from {victim_id}")
+
             try:
-                merge_place_records(conn, survivor_id, victim_id, dry_run)
+                merge_place_records(conn, survivor_id, victim_id, dry_run, brief)
             except RuntimeError as e:
                 print(f"⚠️ Merge skipped due to critical differences:\n{e}")
                 # Fetch Name and full row details
@@ -331,9 +344,9 @@ def merge_places(conn: sqlite3.Connection, dupes, dry_run=True):
                         print(f"    {field:<17} | {str(val1):<32} | {str(val2)}")
 
                 critical_conflicts.append((survivor_id, victim_id))
-                print()
+                # print()
 
-        print()
+        # print()
 
     if critical_conflicts:
         print("🚫 Critical conflicts detected. The following merges were skipped:")
@@ -388,7 +401,7 @@ def get_place_details(conn, place_id):
 
 
 
-def delete_place_id(conn, pid, dry_run=False):
+def delete_place_id(conn, pid, dry_run=False, brief=True):
     """
     Deletes a PlaceTable record and updates referencing tables.
     Sets PlaceID or OwnerID to 0 where applicable and updates UTCModDate.
@@ -404,7 +417,8 @@ def delete_place_id(conn, pid, dry_run=False):
         print("✅ No place with PlaceID = {pid} found.")
         return
 
-    print(f"🧹 Deleting PlaceID {pid} (and cleaning referencing records) ...")
+    if not brief:
+        print(f"🧹 Deleting PlaceID {pid} (and cleaning referencing records) ...")
 
     # Direct references to PlaceID
     referencing_tables = {
@@ -422,10 +436,14 @@ def delete_place_id(conn, pid, dry_run=False):
             update_sql += f" WHERE {col} = ?"
             params.append(pid)
             if not dry_run:
-                print(f"🧹 Cleaning {table} record.\n{update_sql}, {params}")
+                if not brief:
+                    # print(f"    🧹 Cleaning {table} record.\n{update_sql}, {params}")
+                    print(f"    🧹 Cleaning {table} record.")
+
                 cursor.execute(update_sql, tuple(params))
                 updated_rows = cursor.rowcount
-                print(f"✅ Updated {updated_rows} rows in {table}")
+                if not brief:
+                    print(f"    ✅ Updated {updated_rows} rows in {table}")
 
 
     # Conditionally referencing tables
@@ -449,10 +467,13 @@ def delete_place_id(conn, pid, dry_run=False):
         update_sql += " WHERE OwnerType = ? AND OwnerID = ?"
         params.extend([owner_type, pid])
         if not dry_run:
-            print(f"🧹 Cleaning {table} record.\n{update_sql}, {params}")
+            if not brief:
+                # print(f"    🧹 Cleaning {table} record.\n{update_sql}, {params}")
+                print(f"    🧹 Cleaning {table} record.")
             cursor.execute(update_sql, tuple(params))
             updated_rows = cursor.rowcount
-            print(f"✅ Updated {updated_rows} rows in {table}")
+            if not brief:
+                print(f"    ✅ Updated {updated_rows} rows in {table}")
 
 
     # Delete the PlaceTable row
@@ -461,7 +482,7 @@ def delete_place_id(conn, pid, dry_run=False):
         print(f"🗑️ Deleted PlaceID {pid}")
 
 
-def delete_blank_place_records(conn, dry_run=False):
+def delete_blank_place_records(conn, dry_run=False, brief=True):
     """
     Deletes PlaceTable rows where Name is an empty string.
     Updates referencing and conditionally referencing tables,
@@ -477,7 +498,7 @@ def delete_blank_place_records(conn, dry_run=False):
         return
 
     for pid in blank_place_ids:
-        delete_place_id(conn, pid, dry_run=dry_run)
+        delete_place_id(conn, pid, dry_run=dry_run, brief=brief)
 
     if not dry_run:
         conn.commit()
@@ -585,4 +606,109 @@ def report_non_normalized_places(conn, limit: int = 1000):
     else:
         print("✅ No suspicious place names detected.")
 
+
+
+
+def dump_place_usage(conn: sqlite3.Connection, place_id: int):
+    """
+    Dump all database references to a given PlaceID.
+    """
+    print(f"\n==== PLACE USAGE REPORT FOR PlaceID: {place_id} ====")
+
+    # 1. Show PlaceTable entry
+    row = conn.execute("SELECT * FROM PlaceTable WHERE PlaceID = ?", (place_id,)).fetchone()
+    if row:
+        print("\n-- PlaceTable:")
+        for k in row.keys():
+            print(f"  {k}: {row[k]}")
+    else:
+        print("\n-- PlaceTable: No record found.")
+
+    # 2. EventTable: direct PlaceID reference
+    rows = conn.execute("SELECT EventID, OwnerID, EventType, Date, PlaceID FROM EventTable WHERE PlaceID = ?", (place_id,)).fetchall()
+    if rows:
+        print("\n-- EventTable:")
+        for r in rows:
+            print(dict(r))
+
+    # 3. MediaLinkTable: OwnerType=14 means PlaceID
+    rows = conn.execute("SELECT * FROM MediaLinkTable WHERE OwnerType = 14 AND OwnerID = ?", (place_id,)).fetchall()
+    if rows:
+        print("\n-- MediaLinkTable (OwnerType=14):")
+        for r in rows:
+            print(dict(r))
+
+    # 4. TaskLinkTable: OwnerType=5 or 14 means PlaceID
+    rows = conn.execute("SELECT * FROM TaskLinkTable WHERE OwnerType IN (5, 14) AND OwnerID = ?", (place_id,)).fetchall()
+    if rows:
+        print("\n-- TaskLinkTable (OwnerType=5 or 14):")
+        for r in rows:
+            print(dict(r))
+
+    # 5. URLTable: OwnerType=5 means PlaceID
+    rows = conn.execute("SELECT * FROM URLTable WHERE OwnerType = 5 AND OwnerID = ?", (place_id,)).fetchall()
+    if rows:
+        print("\n-- URLTable (OwnerType=5):")
+        for r in rows:
+            print(dict(r))
+
+    print("\n==== END REPORT ====\n")
+
+
+def is_place_referenced(conn: sqlite3.Connection, place_id: int, quiet=True) -> bool:
+    """
+    Check if a PlaceID is referenced by any other table in the database.
+    Prints a report and returns True if found elsewhere, False if orphaned.
+    """
+    if not quiet:
+        print(f"\n==== PLACE USAGE CHECK FOR PlaceID: {place_id} ====")
+    referenced = False
+
+    # 1. EventTable
+    rows = conn.execute("SELECT EventID FROM EventTable WHERE PlaceID = ?", (place_id,)).fetchall()
+    if rows:
+        if not quiet:
+            print(f"-- Referenced in EventTable: {len(rows)} rows")
+        referenced = True
+
+    # 2. MediaLinkTable (OwnerType = 14 = Place)
+    rows = conn.execute("SELECT MediaID FROM MediaLinkTable WHERE OwnerType = 14 AND OwnerID = ?", (place_id,)).fetchall()
+    if rows:
+        if not quiet:
+            print(f"-- Referenced in MediaLinkTable: {len(rows)} rows")
+        referenced = True
+
+    # 3. TaskLinkTable (OwnerType = 5 or 14 = Place)
+    rows = conn.execute("SELECT TaskID FROM TaskLinkTable WHERE OwnerType IN (5, 14) AND OwnerID = ?", (place_id,)).fetchall()
+    if rows:
+        if not quiet:
+            print(f"-- Referenced in TaskLinkTable: {len(rows)} rows")
+        referenced = True
+
+
+    # 4. URLTable (OwnerType = 5 = Place)
+    rows = conn.execute("SELECT LinkID FROM URLTable WHERE OwnerType = 5 AND OwnerID = ?", (place_id,)).fetchall()
+    if rows:
+        if not quiet:
+            print(f"-- Referenced in URLTable: {len(rows)} rows")
+        referenced = True
+
+    if not referenced:
+        if not quiet:
+            print("-- No external references found.")
+
+    if not quiet:
+        print("==== END CHECK ====\n")
+
+    return referenced
+
+
+
+
+def get_all_place_ids(conn: sqlite3.Connection) -> list[int]:
+    """
+    Returns a list of all PlaceID values from the PlaceTable.
+    """
+    rows = conn.execute("SELECT PlaceID FROM PlaceTable").fetchall()
+    return [row[0] for row in rows]
 

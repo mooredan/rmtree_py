@@ -125,40 +125,21 @@ def pp_for_strip_address(name):
         name = re.sub(r"\s+Washington\,*\s+.*\bD\.* *c\.$", r', Washington, District of Columbia, USA', name, flags=re.IGNORECASE)
         # print(f"name: {name}")
 
+
+
+    # Transform names that obviously begin with a township designation
+    m = re.match(r'^\d+\s+[NS]\s+\d+\s+[EW]', name, flags=re.IGNORECASE)
+    if m:
+        name = re.sub(r'^', r'Township ', name)            
+        name = re.sub(r'(\d+\s+[EW])', r'Range \1', name, flags=re.IGNORECASE)            
+
+    m = re.match(r'^\d+\s+[NS]\s+R\s+\d+\s+[EW]', name, flags=re.IGNORECASE)
+    if m:
+        name = re.sub(r'^', r'Township ', name)            
+        name = re.sub(r'([NS])\s+R\s+', r'\1 Range ', name)            
+
+
     return name
-
-
-
-# def fallback_street_before_comma(name: str) -> tuple[str, str] | None:
-#     """
-#     Fallback: if name contains a comma, and the part before the first comma
-#     looks like a street (even without a house number), treat it as address.
-#     """
-#     if ',' not in name:
-#         return None
-# 
-#     head, tail = [part.strip() for part in name.split(",", 1)]
-# 
-#     # Clean trailing punctuation from head
-#     head_clean = re.sub(r'[^\w\s]', '', head)
-# 
-#     # Match things like "6th Ave", "E Main St", "W Macon Street"
-#     # Allow optional numeric prefix OR directional prefix
-#     street_pattern = re.compile(
-#         r'^('
-#         r'(\d{1,3}(st|nd|rd|th)?\s+)?'   # optional 6th, 21st, etc.
-#         r'(N|S|E|W)?\s*'                 # optional directional
-#         r'([A-Z][a-z]+)?\s*'             # Street name (e.g., "Main") is optional
-#         r'(Street|St|Avenue|Ave|Rd|Road|Blvd|Boulevard|Dr|Drive|Ln|Lane|Ct|Court|Pkwy|Parkway|Plaza|Circle|Way|Trail|Loop|Terrace|Hwy|Highway)'
-#         r')$', 
-#         flags=re.IGNORECASE
-#     )
-# 
-#     if street_pattern.match(head_clean):
-#         return tail.strip() or "NOPLACENAME", head.strip()
-# 
-#     return None
-
 
 
 
@@ -171,17 +152,17 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
     # print(f"[{inspect.currentframe().f_code.co_name}] pid: {pid}, name: \"{name}\"")
 
     if not name or not isinstance(name, str):
+        # print(f"strip_address: returning early")
         return name, None
 
     # Skip Townships
-    m = re.match(r"Township\s+[0-9]+", name, flags=re.IGNORECASE)
-    if not m:
+    m = re.match(r"\bTownship\s+[0-9]+", name, flags=re.IGNORECASE)
+    if m:
         return name, None
 
-    m = re.match(r"Range\s+[0-9]+", name, flags=re.IGNORECASE)
-    if not m:
+    m = re.match(r"\bRange\s+[0-9]+", name, flags=re.IGNORECASE)
+    if m:
         return name, None
-
 
 
     original = name
@@ -190,7 +171,7 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
     # Remove leading symbols before first digit (e.g., "-410 N. Euclid")
     working = re.sub(r"^[^\w\d]*", "", working)
 
-    print(f"Try Fallback 1")
+    # print(f"Try Fallback 1")
     # === Fallback 1: check if comma present and only evaluate portion before comma ===
     if "," in working:
         left, right = working.split(",", 1)
@@ -205,7 +186,7 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
             # print(f"📍 PlaceID {pid} matched fallback1 with comma split: address = \"{address}\", name = \"{new_name}\"")
             return new_name, address
 
-    print(f"Try Primary match")
+    # print(f"Try Primary match")
     # === Primary match: full address up to known suffix ===
     STREET_SUFFIXES = [
         "Street", "St", "Avenue", "Ave", "Road", "Rd", "Drive", "Dr", "Lane", "Ln",
@@ -236,7 +217,7 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
         # print(f"📍 PlaceID {pid} matched primary: address = \"{address}\", name = \"{new_name}\"")
         return new_name, address
 
-    print(f"Try Fallback 2")
+    # print(f"Try Fallback 2")
     # === Fallback 2: any address-looking prefix without requiring suffix ===
     fallback2 = re.match(r"^\d{1,6}(?:\s+\S+){0,4}$", working)
     if fallback2:
@@ -258,7 +239,7 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
 #         return new_name, address
 
 
-    print(f"Try Fallback 5")
+    # print(f"Try Fallback 5")
     # === Fallback 5: detect street-only, assumes only one field
     # ensure only one field
     if ',' in name:
@@ -268,36 +249,36 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
     name = re.sub(r"\W+$", "", name)
     name = re.sub(r"\.+$", "", name)
     name = re.sub(r"\,+$", "", name)
-    print(f"name: {name}")
+    # print(f"name: {name}")
 
     # If we end in a known contry name, skip it
     for country in FOREIGN_COUNTRIES:
         if name.endswith(country):
-            print(f"country found")
+            # print(f"country found")
             return name, None
 
     # If we end in a known state or province name, skip it
     for state in STATE_NAMES:
         if name.endswith(state):
-            print(f"state found")
+            # print(f"state found")
             return name, None
 
     for state in MEXICAN_STATES:
         if name.endswith(state):
-            print(f"mexican state found")
+            # print(f"mexican state found")
             return name, None
 
     for province in CANADIAN_PROVINCES:
         if name.endswith(province):
-            print(f"province found")
+            # print(f"province found")
             return name, None
 
     for suffix in STREET_SUFFIXES:
         if name.endswith(suffix):
-            print(f"suffix found")
+            # print(f"suffix found")
             address = name
             address = fix_address(address)
-            print(f"address: {address}")
+            # print(f"address: {address}")
             return "NOPLACENAME", address
 
     # === No more fallbacks
@@ -309,7 +290,7 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
 
 
 def normalize_once(pid, name):
-    print(f"        [{inspect.currentframe().f_code.co_name}] pid: {pid} name: \"{name}\"")
+    # print(f"        [{inspect.currentframe().f_code.co_name}] pid: {pid} name: \"{name}\"")
     # print(f"[{inspect.currentframe().f_code.co_name}] {pid} {name}")
     
     # Check for exact match in COMMON_PLACE_MAPPINGS
@@ -337,6 +318,18 @@ def normalize_once(pid, name):
             name = ", ".join(parts[1:-1])
 
 
+    # Obvious replacements to take care of up front before they get managled
+    name = re.sub(r'^No Township Listed,*\s+', '', name, flags=re.IGNORECASE)
+    name = re.sub(r'^Rio Township, Rio,', r'Rio Township,', name, flags=re.IGNORECASE)
+    name = re.sub(r'Floyd Knox, Floyd,',  r', Floyds Knobs, Floyd,', name, flags=re.IGNORECASE)
+    name = re.sub(r'\s+Shenandoah, Iowa', r', Shenandoah, Iowa', name, flags=re.IGNORECASE)
+    name = re.sub(r'^Ohio, Preble Co$', r'Preble County, Ohio, USA', name, flags=re.IGNORECASE)
+    name = re.sub(r'\(original\)', r'', name, flags=re.IGNORECASE)
+    name = re.sub(r'\(new\)', r'', name, flags=re.IGNORECASE)
+    name = re.sub(r'\(Issued Through\)', r'', name, flags=re.IGNORECASE)
+    name = re.sub(r'^Route \d+$', r'', name, flags=re.IGNORECASE)
+
+    
     # # get rid of addresses right away
     # # Strip an address if present
     # # this needs to be done *before*
@@ -380,11 +373,14 @@ def normalize_once(pid, name):
     # checking if an address in the "NOPLACENAME" routines below 
     name = pp_for_strip_address(name)
 
+    # print(f"Before strip_address: name: \"{name}\"")
     name, addr = strip_address_if_present(name, pid)
+    # print(f"After strip_address: name: \"{name}\"    addr: \"{addr}\"")
     if addr:
         # Optionally: save the stripped address somewhere (log, dict, etc.)
         # handling this is future work
         print(f"📍 PlaceID {pid} had its address: \"{addr}\" stripped, new name: \"{name}\"")
+
 
 
     # when a place name is just a single character, remove it
@@ -430,25 +426,33 @@ def normalize_once(pid, name):
     )
 
 
-    # Strip "Township" from first field if in valid US state (except NJ, PA) and not a survey-style township
-    lines = name.split(",")
-    if len(lines) >= 3:
-        state = lines[-2].strip()
-        country = lines[-1].strip()
-        first_field = lines[0].strip()
+    # Fix names that have no separator after the Township when the township is named
+    m = re.match(r'^.*[a-z]\s+Township\s+[a-z].*', name, re.IGNORECASE)
+    if m:
+        name = re.sub(r'^(.*?\s+Township)', r'\1,', name, re.IGNORECASE)
 
-        if (
-            country == "USA"
-            and state in STATE_NAMES
-            and state not in {"New Jersey", "Pennsylvania"}
-            and "Township" in first_field
-            and not re.search(r'\bTownship\s+\d+.*\bRange\b', first_field, re.IGNORECASE)
-        ):
-            # Remove "Township" and any trailing comma
-            new_first = re.sub(r'\bTownship\b[,]?\s*', '', first_field).strip()
-            lines[0] = new_first
-            name = ", ".join([part.strip() for part in lines])
-            return name  # Safe early return
+
+
+
+    # # Strip "Township" from first field if in valid US state (except NJ, PA) and not a survey-style township
+    # lines = name.split(",")
+    # if len(lines) >= 3:
+    #     state = lines[-2].strip()
+    #     country = lines[-1].strip()
+    #     first_field = lines[0].strip()
+
+    #     if (
+    #         country == "USA"
+    #         and state in STATE_NAMES
+    #         and state not in {"New Jersey", "Pennsylvania"}
+    #         and "Township" in first_field
+    #         and not re.search(r'\bTownship\s+\d+.*\bRange\b', first_field, re.IGNORECASE)
+    #     ):
+    #         # Remove "Township" and any trailing comma
+    #         new_first = re.sub(r'\bTownship\b[,]?\s*', '', first_field).strip()
+    #         lines[0] = new_first
+    #         name = ", ".join([part.strip() for part in lines])
+    #         return name  # Safe early return
 
 
 
@@ -573,8 +577,8 @@ def normalize_once(pid, name):
     name = re.sub(r" Assembly District [0-9][0-9],", ",", name)
     name = re.sub(r"^District No [0-9], ", "", name)
     name = re.sub(r"^District No [0-9][0-9], ", "", name)
-    name = re.sub(r"^Township [0-9], ", "", name)
-    name = re.sub(r"^Township [0-9][0-9], ", "", name)
+    # name = re.sub(r"^Township [0-9], ", "", name)
+    # name = re.sub(r"^Township [0-9][0-9], ", "", name)
     name = re.sub(r"^Precinct [0-9], ", "", name)
     name = re.sub(r"^Precinct [0-9][0-9], ", "", name)
     name = re.sub(r" Irland$", " Ireland", name)
@@ -705,22 +709,22 @@ def normalize_once(pid, name):
 
 
 def normalize_place_iteratively(pid, name):
-    print(f"    [{inspect.currentframe().f_code.co_name}] pid: {pid} name: \"{name}\"")
+    # print(f"    [{inspect.currentframe().f_code.co_name}] pid: {pid} name: \"{name}\"")
     # print(f"[{inspect.currentframe().f_back.f_code.co_name}] {pid} {name}")
     previous = name
     count = 0
     while True:
         count = count + 1
-        print(f"    [{inspect.currentframe().f_code.co_name}] Calling normalize_once, count: {count}")
+        # print(f"    [{inspect.currentframe().f_code.co_name}] Calling normalize_once, count: {count}")
         current = normalize_once(pid, previous)
-        print(f"    [{inspect.currentframe().f_code.co_name}] normalize_once returned with \"{current}\"")
+        # print(f"    [{inspect.currentframe().f_code.co_name}] normalize_once returned with \"{current}\"")
         if current == previous:
             break
         previous = current
     return current if current != name else None
 
 
-def normalize_place_names(conn: sqlite3.Connection, dry_run=True):
+def normalize_place_names(conn: sqlite3.Connection, dry_run=True, brief=True):
     from rmutils import delete_place_id, current_utcmoddate
     cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable")
     updates = []
@@ -730,8 +734,9 @@ def normalize_place_names(conn: sqlite3.Connection, dry_run=True):
         new_name = normalize_place_iteratively(place_id, old_name)
         if new_name:
             if new_name == "NOPLACENAME":
-                print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be deleted ...")
-                delete_place_id(conn, place_id, dry_run)
+                if not brief:
+                    print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be deleted ...")
+                delete_place_id(conn, place_id, dry_run, brief=brief)
             else:
                 updates.append((place_id, old_name, new_name))
           
@@ -834,4 +839,8 @@ def standardize_us_county_name(name, counties_db, state_list):
             return f"{county_candidate} County, {state}, USA"
 
     return name  # No match found
+
+
+
+
 

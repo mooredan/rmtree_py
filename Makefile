@@ -7,8 +7,9 @@ dump.log : $(wildcard *.py)
 
 
 devel.log : $(wildcard *.py)
-	@ cd ../Genealogy && git restore ZebMoore_Ancestry.rmtree
+	python3 dump_place_table.py  > places-before.log
 	python3 devel.py | tee devel.log
+	python3 dump_place_table.py  > places-after.log
 
 
 .PHONY: fuzzy
