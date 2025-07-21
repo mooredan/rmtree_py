@@ -134,11 +134,13 @@ def devel():
             unused_count += 1
             name = get_place_name_from_id(conn, pid)
             print(f"This PlaceID {pid} is not referenced: name: \"{name}\"")
-            dump_place_usage(conn, pid)
-            delete_place_id(conn, pid, dry_run=False, brief=True)
+            # dump_place_usage(conn, pid)
+            ret = delete_place_id(conn, pid, dry_run=False, brief=True)
+            if not ret:
+                print(f"🚫 delete_place_id returned False for pid: {pid}")
 
     print(f"{unused_count} PlaceIDs were not used and deleted")
-    return
+    # return
 
     # do our best at renaming PlaceTable names
     normalize_place_names(conn, dry_run=False)

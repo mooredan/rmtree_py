@@ -16,15 +16,6 @@ from config import (
     HISTORICAL_US_TERRITORIES,
 )
 
-# from rmutils import (
-#     delete_place_id,
-# )
-
-#    name = re.sub(
-#        r'\bT(?:wp)?\s*(\d+)([NS])\s*R\s*(\d+)([EW])\b',
-#        r'Township \1\2 Range \3\4',
-#        name
-#    )
 
 def fix_address(address):
     # print(f"{address}")
@@ -726,7 +717,7 @@ def normalize_place_iteratively(pid, name):
 
 def normalize_place_names(conn: sqlite3.Connection, dry_run=True, brief=True):
     from rmutils import delete_place_id, current_utcmoddate
-    cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable")
+    cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable WHERE PlaceType != 1")
     updates = []
 
     for row in cursor.fetchall():
@@ -736,7 +727,7 @@ def normalize_place_names(conn: sqlite3.Connection, dry_run=True, brief=True):
             if new_name == "NOPLACENAME":
                 if not brief:
                     print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be deleted ...")
-                delete_place_id(conn, place_id, dry_run, brief=brief)
+                ret = delete_place_id(conn, place_id, dry_run, brief=brief)
             else:
                 updates.append((place_id, old_name, new_name))
           

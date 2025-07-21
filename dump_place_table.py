@@ -4,7 +4,7 @@ import csv
 
 def dump_places(to_csv=None):
     conn = get_connection()
-    cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable ORDER BY PlaceID")
+    cursor = conn.execute("SELECT PlaceID, Name FROM PlaceTable WHERE PlaceType != 1 ORDER BY PlaceID")
     rows = cursor.fetchall()
     conn.close()
 

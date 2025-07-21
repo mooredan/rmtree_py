@@ -6,7 +6,7 @@ from rapidfuzz import fuzz
 
 def fetch_all_places(conn):
     cursor = conn.cursor()
-    cursor.execute("SELECT PlaceID, Name FROM PlaceTable")
+    cursor.execute("SELECT PlaceID, Name FROM PlaceTable WHERE PlaceType != 1")
     return cursor.fetchall()
 
 

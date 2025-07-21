@@ -401,12 +401,25 @@ def get_place_details(conn, place_id):
 
 
 
-def delete_place_id(conn, pid, dry_run=False, brief=True):
+def delete_place_id(conn: sqlite3.Connection, pid: int, dry_run=False, brief=True) -> bool:
     """
-    Deletes a PlaceTable record and updates referencing tables.
+    Deletes a place from PlaceTable and removes all references to it from other tables.
+    Skips deletion if PlaceType == 1 or if the place is still referenced.
     Sets PlaceID or OwnerID to 0 where applicable and updates UTCModDate.
+    Returns True if deleted, False otherwise.
     """
     cursor = conn.cursor()
+
+    # Check PlaceType first
+    cursor.execute("SELECT PlaceType FROM PlaceTable WHERE PlaceID = ?", (pid,))
+    row = cursor.fetchone()
+    if not row:
+        print(f"[delete_place_id] PlaceID {pid} not found.")
+        return False
+    if row[0] == 1:
+        print(f"[delete_place_id] PlaceID {pid} has PlaceType == 1, skipping.")
+        return False
+
     utc_now = current_utcmoddate()
 
     # Make sure pid is in the table
@@ -415,7 +428,7 @@ def delete_place_id(conn, pid, dry_run=False, brief=True):
 
     if not empty_id:
         print("✅ No place with PlaceID = {pid} found.")
-        return
+        return False
 
     if not brief:
         print(f"🧹 Deleting PlaceID {pid} (and cleaning referencing records) ...")
@@ -481,6 +494,8 @@ def delete_place_id(conn, pid, dry_run=False, brief=True):
         cursor.execute("DELETE FROM PlaceTable WHERE PlaceID = ?", (pid,))
         print(f"🗑️ Deleted PlaceID {pid}")
 
+    return True 
+
 
 def delete_blank_place_records(conn, dry_run=False, brief=True):
     """
@@ -498,7 +513,7 @@ def delete_blank_place_records(conn, dry_run=False, brief=True):
         return
 
     for pid in blank_place_ids:
-        delete_place_id(conn, pid, dry_run=dry_run, brief=brief)
+        ret = delete_place_id(conn, pid, dry_run=dry_run, brief=brief)
 
     if not dry_run:
         conn.commit()
@@ -531,7 +546,7 @@ def report_non_normalized_places(conn, limit: int = 1000):
       - excessive repetition or patterns
     """
     cursor = conn.cursor()
-    cursor.execute("SELECT PlaceID, Name FROM PlaceTable ORDER BY Name COLLATE NOCASE")
+    cursor.execute("SELECT PlaceID, Name FROM PlaceTable WHERE PlaceType != 1 ORDER BY Name COLLATE NOCASE")
 
     import re
 
@@ -708,7 +723,8 @@ def is_place_referenced(conn: sqlite3.Connection, place_id: int, quiet=True) -> 
 def get_all_place_ids(conn: sqlite3.Connection) -> list[int]:
     """
     Returns a list of all PlaceID values from the PlaceTable.
+    Ignore PlaceType == 1 - these are built-in LDS locations
     """
-    rows = conn.execute("SELECT PlaceID FROM PlaceTable").fetchall()
+    rows = conn.execute("SELECT PlaceID FROM PlaceTable WHERE PlaceType != 1").fetchall()
     return [row[0] for row in rows]
 
