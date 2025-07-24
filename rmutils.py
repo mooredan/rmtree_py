@@ -21,6 +21,7 @@ from config import (
     MEXICAN_STATES,
     CANADIAN_PROVINCES,
     HISTORICAL_US_TERRITORIES,
+    UNIQUE_FACT_TYPES,
 )
 
 from normalizer import (
@@ -492,7 +493,8 @@ def delete_place_id(conn: sqlite3.Connection, pid: int, dry_run=False, brief=Tru
     # Delete the PlaceTable row
     if not dry_run:
         cursor.execute("DELETE FROM PlaceTable WHERE PlaceID = ?", (pid,))
-        print(f"🗑️ Deleted PlaceID {pid}")
+        if not brief:
+            print(f"🗑️ Deleted PlaceID {pid}")
 
     return True 
 
@@ -670,6 +672,112 @@ def dump_place_usage(conn: sqlite3.Connection, place_id: int):
     print("\n==== END REPORT ====\n")
 
 
+
+# 
+# def print_event_references_for_place_id(conn: sqlite3.Connection, place_id: int):
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT Name FROM PlaceTable WHERE PlaceID = ?", (place_id,))
+#     row = cursor.fetchone()
+#     place_name = row[0] if row else "(Unknown)"
+# 
+#     query = """
+#     SELECT
+#         e.EventID,
+#         e.OwnerID,
+#         e.OwnerType,
+#         e.EventType,
+#         p.PersonID,
+#         n.Given || ' ' || n.Surname AS FullName
+#     FROM EventTable e
+#     LEFT JOIN PersonTable p
+#         ON e.OwnerType = 0 AND e.OwnerID = p.PersonID
+#     LEFT JOIN NameTable n
+#         ON p.PersonID = n.OwnerID AND n.IsPrimary = 1
+#     WHERE e.PlaceID = ?
+#     ORDER BY e.EventID;
+#     """
+#     cursor.execute(query, (place_id,))
+#     rows = cursor.fetchall()
+# 
+#     # print(f"\nPlaceID: {place_id}  Name: {place_name}")
+#     print(f"\nPlaceID: {place_id}  Name: {place_name}")
+#     print(f"{'EventID':<8} {'OwnerID':<8} {'OwnerType':<10} {'EventType':<9} {'FactName':<20} {'PersonID':<10} {'Full Name'}")
+# 
+#     for event_id, owner_id, owner_type, event_type, person_id, full_name in rows:
+#         fact_name = UNIQUE_FACT_TYPES.get(event_type, f"Unknown ({event_type})")
+#         print(f"{event_id:<8} {owner_id:<8} {owner_type:<10} {event_type:<9} {fact_name:<20} {person_id or '':<10} {full_name or ''}")
+# 
+# 
+
+# def print_event_references_for_place_id(conn: sqlite3.Connection, place_id: int):
+#     cursor = conn.cursor()
+# 
+#     # Get place name for display
+#     cursor.execute("SELECT Name FROM PlaceTable WHERE PlaceID = ?", (place_id,))
+#     row = cursor.fetchone()
+#     place_name = row[0] if row else "(Unknown)"
+# 
+#     # Query for events referencing this place
+#     query = """
+#     SELECT
+#         e.EventID,
+#         e.OwnerID,
+#         e.OwnerType,
+#         e.EventType,
+#         p.PersonID,
+#         n.Given || ' ' || n.Surname AS FullName
+#     FROM EventTable e
+#     LEFT JOIN PersonTable p
+#         ON e.OwnerType = 0 AND e.OwnerID = p.PersonID
+#     LEFT JOIN NameTable n
+#         ON p.PersonID = n.OwnerID AND n.IsPrimary = 1
+#     WHERE e.PlaceID = ?
+#     ORDER BY e.EventID;
+#     """
+#     cursor.execute(query, (place_id,))
+#     rows = cursor.fetchall()
+# 
+#     # Print header
+#     print(f"{'PlaceID':<8} {'PlaceName':<30} {'EventID':<8} {'OwnerID':<8} {'OwnerType':<10} {'EventType':<9} {'FactName':<20} {'PersonID':<10} {'Full Name'}")
+# 
+#     for event_id, owner_id, owner_type, event_type, person_id, full_name in rows:
+#         fact_name = UNIQUE_FACT_TYPES.get(event_type, f"Unknown ({event_type})")
+#         print(f"{place_id:<8} {place_name:<30} {event_id:<8} {owner_id:<8} {owner_type:<10} {event_type:<9} {fact_name:<20} {person_id or '':<10} {full_name or ''}")
+
+
+
+
+# def print_event_references_for_place_id(conn: sqlite3.Connection, place_id: int):
+#     """
+#     For a given PlaceID, print: PlaceID, EventID, OwnerID, OwnerType, EventType, PersonID, and Person's primary name.
+#     """
+#     query = """
+#     SELECT
+#         e.PlaceID,
+#         e.EventID,
+#         e.OwnerID,
+#         e.OwnerType,
+#         e.EventType,
+#         p.PersonID,
+#         n.Given || ' ' || n.Surname AS FullName
+#     FROM EventTable e
+#     LEFT JOIN PersonTable p
+#         ON e.OwnerType = 0 AND e.OwnerID = p.PersonID
+#     LEFT JOIN NameTable n
+#         ON p.PersonID = n.OwnerID AND n.IsPrimary = 1
+#     WHERE e.PlaceID = ?
+#     ORDER BY e.EventID;
+#     """
+#     cursor = conn.cursor()
+#     cursor.execute(query, (place_id,))
+#     rows = cursor.fetchall()
+# 
+#     print(f"{'PlaceID':<8} {'EventID':<8} {'OwnerID':<8} {'OwnerType':<10} {'EventType':<10} {'PersonID':<10} {'Full Name'}")
+#     for row in rows:
+#         print(f"{row[0]:<8} {row[1]:<8} {row[2]:<8} {row[3]:<10} {row[4]:<10} {row[5] if row[5] else '':<10} {row[6] or ''}")
+
+
+
 def is_place_referenced(conn: sqlite3.Connection, place_id: int, quiet=True) -> bool:
     """
     Check if a PlaceID is referenced by any other table in the database.
@@ -727,4 +835,169 @@ def get_all_place_ids(conn: sqlite3.Connection) -> list[int]:
     """
     rows = conn.execute("SELECT PlaceID FROM PlaceTable WHERE PlaceType != 1").fetchall()
     return [row[0] for row in rows]
+
+
+############################################################
+# place mapping checker
+############################################################
+
+def get_single_field_places(conn):
+    cursor = conn.execute("""
+        SELECT PlaceID, Name
+        FROM PlaceTable
+        WHERE PlaceType != 1
+          AND Name NOT LIKE '%,%'
+          AND Name IS NOT NULL
+          AND TRIM(Name) != ''
+        ORDER BY Name
+    """)
+    return cursor.fetchall()
+
+def build_known_place_lookup(conn):
+    cursor = conn.execute("""
+        SELECT Name
+        FROM PlaceTable
+        WHERE PlaceType != 1
+          AND Name LIKE '%,%'
+        ORDER BY Name
+    """)
+    return cursor.fetchall()
+
+
+
+def find_matches_against_known_segments(conn):
+    single_field_places = get_single_field_places(conn)
+    # known_segments = build_known_place_lookup(conn)
+
+    full_names = []
+    single_names = []
+
+    cursor = conn.execute("""
+        SELECT Name 
+        FROM PlaceTable 
+        WHERE PlaceType != 1 
+          AND Name LIKE '%,%'
+          AND TRIM(Name) != ''
+        ORDER BY Name
+    """)
+
+    rows = cursor.fetchall()       
+
+    for row in rows:
+        full_name = row[0]
+        full_names.append(full_name)
+        # print(f"{full_name}")
+
+
+    cursor = conn.execute("""
+        SELECT PlaceID, Name
+        FROM PlaceTable
+        WHERE PlaceType != 1
+          AND Name NOT LIKE '%,%'
+          AND Name IS NOT NULL
+          AND TRIM(Name) != ''
+        ORDER BY Name
+    """)
+
+    rows = cursor.fetchall()       
+
+    for row in rows:
+        single_name = row[1]
+        single_name_pid = row[0]
+        if (is_foreign_country(single_name)):
+            continue
+        if (is_us_territory(single_name)):
+            continue
+        if (single_name == "Mexico"):
+            continue
+        single_names.append([single_name_pid, single_name])
+        # print(f"{single_name}")
+    
+    show_matches = False 
+
+    no_match_pids = []
+
+    for row in single_names:
+        single_name = row[1]
+        pid = row[0]
+        match_found = False 
+        for full_name in full_names:
+            if re.search(single_name, full_name):
+                match_found = True
+                if show_matches:
+                    print(f"    Found \"{single_name}\" in \"{full_name}\"")
+        if not match_found:
+            print(f"    No match found: {pid} \"{single_name}\"")
+            # dump_place_usage(conn, pid)
+            no_match_pids.append(pid)
+            # print_event_references_for_place_id(conn, pid)
+
+
+    print_event_references_for_place_ids(conn, no_match_pids)
+
+
+
+def print_event_references_for_place_ids(conn: sqlite3.Connection, place_ids: list[int]):
+    """
+    Wrapper function that prints all event references for a list of PlaceIDs.
+    """
+    print(f"{'PlaceID':<8} {'PlaceName':<30} {'EventID':<8} {'OwnerID':<8} {'OwnerType':<10} {'EventType':<9} {'FactName':<20} {'PersonID':<10} {'Full Name'}")
+    for place_id in place_ids:
+        _print_event_references_for_place_id(conn, place_id)
+
+
+
+def _print_event_references_for_place_id(conn: sqlite3.Connection, place_id: int):
+    """
+    Prints all events referencing a given PlaceID (internal use).
+    """
+    cursor = conn.cursor()
+
+    # Get place name
+    cursor.execute("SELECT Name FROM PlaceTable WHERE PlaceID = ?", (place_id,))
+    row = cursor.fetchone()
+    place_name = row[0] if row else "(Unknown)"
+
+    # Query for event references
+    query = """
+    SELECT
+        e.EventID,
+        e.OwnerID,
+        e.OwnerType,
+        e.EventType,
+        p.PersonID,
+        n.Given || ' ' || n.Surname AS FullName
+    FROM EventTable e
+    LEFT JOIN PersonTable p
+        ON e.OwnerType = 0 AND e.OwnerID = p.PersonID
+    LEFT JOIN NameTable n
+        ON p.PersonID = n.OwnerID AND n.IsPrimary = 1
+    WHERE e.PlaceID = ?
+    ORDER BY e.EventID;
+    """
+    cursor.execute(query, (place_id,))
+    rows = cursor.fetchall()
+
+    for event_id, owner_id, owner_type, event_type, person_id, full_name in rows:
+        fact_name = UNIQUE_FACT_TYPES.get(event_type, f"Unknown ({event_type})")
+        print(f"{place_id:<8} {place_name:<30} {event_id:<8} {owner_id:<8} {owner_type:<10} {event_type:<9} {fact_name:<20} {person_id or '':<10} {full_name or ''}")
+
+
+
+
+
+
+
+# Usage example:
+# with sqlite3.connect('yourfile.rmtree') as conn:
+#     find_matches_against_known_segments(conn)
+
+def is_foreign_country(name: str) -> bool:
+    normalized = name.strip().casefold()  # normalize whitespace and case
+    return any(country.casefold() == normalized for country in FOREIGN_COUNTRIES)
+    # return any(country == name for country in FOREIGN_COUNTRIES)
+
+def is_us_territory(name: str) -> bool:
+    normalized = name.strip().casefold()  # normalize whitespace and case
+    return any(country.casefold() == normalized for country in HISTORICAL_US_TERRITORIES) 
 

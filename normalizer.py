@@ -130,6 +130,29 @@ def pp_for_strip_address(name):
         name = re.sub(r'([NS])\s+R\s+', r'\1 Range ', name)            
 
 
+    if len(parts) == 1:
+        if parts[0] == "Ev":
+            name = ""
+        if parts[0] == "Sh":
+            name = ""
+        if parts[0] == "Sp":
+            name = ""
+        if parts[0] == "Fw":
+            name = ""
+        if parts[0] == "Rural":
+            name = ""
+        if parts[0] == "Suburban":
+            name = ""
+        if parts[0] == "This City":
+            name = ""
+        if parts[0] == "Railroad Board":
+            name = ""
+        if parts[0] == "North Main street":
+            name = ""
+        if parts[0] == "Salt/Lake-City":
+            name = "Salt Lake City"
+
+
     return name
 
 
@@ -280,7 +303,7 @@ def strip_address_if_present(name: str, pid: int = 0) -> tuple[str, str | None]:
 
 
 
-def normalize_once(pid, name):
+def normalize_once(pid, name, brief=True):
     # print(f"        [{inspect.currentframe().f_code.co_name}] pid: {pid} name: \"{name}\"")
     # print(f"[{inspect.currentframe().f_code.co_name}] {pid} {name}")
     
@@ -363,6 +386,9 @@ def normalize_once(pid, name):
     # this needs to be done *before*
     # checking if an address in the "NOPLACENAME" routines below 
     name = pp_for_strip_address(name)
+    if not name: 
+        return "NOPLACENAME"
+
 
     # print(f"Before strip_address: name: \"{name}\"")
     name, addr = strip_address_if_present(name, pid)
@@ -370,7 +396,8 @@ def normalize_once(pid, name):
     if addr:
         # Optionally: save the stripped address somewhere (log, dict, etc.)
         # handling this is future work
-        print(f"📍 PlaceID {pid} had its address: \"{addr}\" stripped, new name: \"{name}\"")
+        if not brief:
+            print(f"📍 PlaceID {pid} had its address: \"{addr}\" stripped, new name: \"{name}\"")
 
 
 
@@ -465,9 +492,32 @@ def normalize_once(pid, name):
         pattern = rf"\b(.+?)\s+{re.escape(territory)}$"
         if re.search(pattern, name):
             name = re.sub(pattern, rf"\1, {territory}", name)
+            # remove double comma
+            name = re.sub(r',,', r',', name)
+            # fix doubles in the end
+            parts = [p.strip() for p in name.split(",")]
+            if len(parts) >= 2 and parts[-1] == parts[-2]:
+                name = ", ".join(parts[0:-1])
             break  # only one match expected
 
+
+    # if there is only one field and it is the abbreviation of a country
+    # or shortened name, correct to the full name
+    # other substitutions for single field names
+    parts = [p.strip() for p in name.split(",")]
+    if len(parts) == 1:
+        if name == "USA" or name == "United States":
+            name = "United States of America"
+        if name == "Deutschland":
+            name = "Germany"
+        if name == "Columbia":
+            name = "Colombia"
+        
+
+
+
     name = fix_missing_commas_in_county_state(name)
+
 
     # Add comma before 'Mexico' unless it's part of 'New Mexico'
     if " Mexico" in name and "New Mexico" not in name:
@@ -500,12 +550,13 @@ def normalize_once(pid, name):
         name = f"{STATE_ABBREVIATIONS[name.strip()]}, USA"
 
 
-
-
-
     # Fix state-only names like 'Virginia' → 'Virginia, USA'
     if name.strip() in STATE_NAMES:
         name += ", USA"
+
+
+
+
 
     # Ensure a comma precedes valid Mexican state names (excluding 'New Mexico')
     if not name.endswith("New Mexico, USA"):  # exclude legitimate U.S. state
@@ -653,10 +704,10 @@ def normalize_once(pid, name):
         name += ", USA"
 
 
-    # If name ends with a historical US territory and does not already end in ', USA', append ', USA'
-    if any(name.endswith(", " + territory) for territory in HISTORICAL_US_TERRITORIES):
-        if not name.endswith(", USA"):
-            name += ", USA"
+    # # If name ends with a historical US territory and does not already end in ', USA', append ', USA'
+    # if any(name.endswith(", " + territory) for territory in HISTORICAL_US_TERRITORIES):
+    #     if not name.endswith(", USA"):
+    #         name += ", USA"
 
     # Fix Canadian places missing a comma before the province
     for province in CANADIAN_PROVINCES:
@@ -699,7 +750,7 @@ def normalize_once(pid, name):
     return name
 
 
-def normalize_place_iteratively(pid, name):
+def normalize_place_iteratively(pid, name, brief=True):
     # print(f"    [{inspect.currentframe().f_code.co_name}] pid: {pid} name: \"{name}\"")
     # print(f"[{inspect.currentframe().f_back.f_code.co_name}] {pid} {name}")
     previous = name
@@ -707,7 +758,7 @@ def normalize_place_iteratively(pid, name):
     while True:
         count = count + 1
         # print(f"    [{inspect.currentframe().f_code.co_name}] Calling normalize_once, count: {count}")
-        current = normalize_once(pid, previous)
+        current = normalize_once(pid, previous, brief=brief)
         # print(f"    [{inspect.currentframe().f_code.co_name}] normalize_once returned with \"{current}\"")
         if current == previous:
             break
@@ -722,7 +773,7 @@ def normalize_place_names(conn: sqlite3.Connection, dry_run=True, brief=True):
 
     for row in cursor.fetchall():
         place_id, old_name = row["PlaceID"], row["Name"]
-        new_name = normalize_place_iteratively(place_id, old_name)
+        new_name = normalize_place_iteratively(place_id, old_name, brief=brief)
         if new_name:
             if new_name == "NOPLACENAME":
                 if not brief:

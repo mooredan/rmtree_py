@@ -13,6 +13,10 @@ from rmutils import (
     is_place_referenced,
     get_all_place_ids,
     delete_place_id,
+    find_matches_against_known_segments,
+    get_single_field_places,
+    is_foreign_country,
+    is_us_territory,
 )
 
 from normalizer import (
@@ -125,6 +129,10 @@ def devel():
     #    test_pid(conn, place_id)
     # return
 
+    # find_matches_against_known_segments(conn)
+    # conn.close()
+    # return
+
 
     place_ids = get_all_place_ids(conn)
     unused_count = 0
@@ -143,23 +151,48 @@ def devel():
     # return
 
     # do our best at renaming PlaceTable names
-    normalize_place_names(conn, dry_run=False)
+    normalize_place_names(conn, dry_run=False, brief=False)
 
-    #  delete_blank_place_records(conn, dry_run=True)
+    # delete_blank_place_records(conn, dry_run=False, brief=False)
 
     # Find PlaceIDs where the place name is identical
-    dupes = find_duplicate_place_names(conn)
+    dupes = find_duplicate_place_names(conn, brief=False)
     num_dupes = len(dupes)
     print(f"Number of duplicates found: {num_dupes}\n")
 
     # let's merge those
-    merge_places(conn, dupes, dry_run=False, brief=True)
+    merge_places(conn, dupes, dry_run=False, brief=False)
+
+    # what is left over?
+    # report_non_normalized_places(conn)
+
+    # report singles.....
+    my_list = []
+    single_field_places = get_single_field_places(conn)
+    for pid, name in single_field_places:
+        # print(f"{pid} {name}")
+        if (is_foreign_country(name)):
+            continue
+        if (is_us_territory(name)):
+            continue
+        print(f"{pid} {name}")
+        my_list.append(name)
+
+
+    with open("place_names.txt", "w", encoding="utf-8") as f:
+        for item in my_list:
+            f.write(item + "\n")
+
+    num_left_overs = len(my_list) 
+    print(f"leftovers: {num_left_overs}")
+
+
+    find_matches_against_known_segments(conn)
 
     # what is left over?
     report_non_normalized_places(conn)
 
     conn.close()
-
 
 if __name__ == "__main__":
     devel()
