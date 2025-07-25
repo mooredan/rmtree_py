@@ -777,9 +777,11 @@ def normalize_place_names(conn: sqlite3.Connection, dry_run=True, brief=True):
         if new_name:
             if new_name == "NOPLACENAME":
                 if not brief:
-                    print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be deleted ...")
+                    print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be deleted")
                 ret = delete_place_id(conn, place_id, dry_run, brief=brief)
             else:
+                if not brief:
+                    print(f"🧹 PlaceID {place_id} had an old name of \"{old_name}\" and will be updated to \"{new_name}\"")
                 updates.append((place_id, old_name, new_name))
           
 

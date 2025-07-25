@@ -275,6 +275,7 @@ CANADIAN_PROVINCES = [
 
 
 # Corner cases:   "Georgia", "Mexico",
+# and places that are OK
 FOREIGN_COUNTRIES = {
     "Afghanistan",
     "Albania",
@@ -481,6 +482,8 @@ FOREIGN_COUNTRIES = {
     "Zambia",
     "Zimbabwe",
     "At sea",
+    "Europe",
+    "Holland",
 }
 
 

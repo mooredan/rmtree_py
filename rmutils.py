@@ -456,8 +456,9 @@ def delete_place_id(conn: sqlite3.Connection, pid: int, dry_run=False, brief=Tru
 
                 cursor.execute(update_sql, tuple(params))
                 updated_rows = cursor.rowcount
-                if not brief:
-                    print(f"    ✅ Updated {updated_rows} rows in {table}")
+                if updated_rows > 0:
+                    if not brief:
+                        print(f"    ✅ Updated {updated_rows} rows in {table}")
 
 
     # Conditionally referencing tables
@@ -486,8 +487,9 @@ def delete_place_id(conn: sqlite3.Connection, pid: int, dry_run=False, brief=Tru
                 print(f"    🧹 Cleaning {table} record.")
             cursor.execute(update_sql, tuple(params))
             updated_rows = cursor.rowcount
-            if not brief:
-                print(f"    ✅ Updated {updated_rows} rows in {table}")
+            if updated_rows > 0:
+                if not brief:
+                    print(f"    ✅ Updated {updated_rows} rows in {table}")
 
 
     # Delete the PlaceTable row
@@ -913,7 +915,7 @@ def find_matches_against_known_segments(conn):
         single_names.append([single_name_pid, single_name])
         # print(f"{single_name}")
     
-    show_matches = False 
+    show_matches = False
 
     no_match_pids = []
 
@@ -981,6 +983,138 @@ def _print_event_references_for_place_id(conn: sqlite3.Connection, place_id: int
     for event_id, owner_id, owner_type, event_type, person_id, full_name in rows:
         fact_name = UNIQUE_FACT_TYPES.get(event_type, f"Unknown ({event_type})")
         print(f"{place_id:<8} {place_name:<30} {event_id:<8} {owner_id:<8} {owner_type:<10} {event_type:<9} {fact_name:<20} {person_id or '':<10} {full_name or ''}")
+
+
+
+def get_all_places(conn: sqlite3.Connection) -> list[tuple[int, str]]:
+    """
+    Returns a list of (PlaceID, Name) tuples from PlaceTable
+    excluding entries with PlaceType == 1.
+    """
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT PlaceID, Name
+        FROM PlaceTable
+        WHERE PlaceType != 1
+        ORDER BY PlaceID
+    """)
+    return cursor.fetchall()
+
+
+
+def update_place_name(conn: sqlite3.Connection, place_id: int, new_name: str) -> None:
+    """
+    Updates the Name field of the given PlaceID in PlaceTable.
+    Also updates the UTCModDate to the current UTC time.
+    """
+    cursor = conn.cursor()
+    mod_date = current_utcmoddate()
+    cursor.execute("""
+        UPDATE PlaceTable
+        SET Name = ?, UTCModDate = ?
+        WHERE PlaceID = ?
+    """, (new_name, mod_date, place_id))
+    conn.commit()
+
+
+
+
+def split_place(name: str) -> list[str]:
+    """
+    Splits a place name string into components using commas.
+    Strips leading/trailing whitespace from each component.
+    Example: "Salt Lake City, Salt Lake, Utah, USA" → ["Salt Lake City", "Salt Lake", "Utah", "USA"]
+    """
+    return [part.strip() for part in name.split(",") if part.strip()]
+
+
+def join_place(parts: list[str]) -> str:
+    """
+    Joins a list of place components into a standardized place string.
+    Example: ["Salt Lake City", "Salt Lake", "Utah", "USA"] → "Salt Lake City, Salt Lake, Utah, USA"
+    """
+    return ", ".join(parts)
+
+
+
+# def infer_and_insert_missing_county(conn, dry_run=True):
+#     """
+#     Find 3-part place names that are missing a county,
+#     and expand them using matching 4-part entries and known US_COUNTIES.
+#     If dry_run is True, only prints proposed updates.
+#     """
+#     three_field = {}
+#     four_field = {}
+# 
+#     COUNTY_SET = set(US_COUNTIES)
+# 
+#     for pid, name in get_all_places(conn):
+#         parts = split_place(name)
+#         if len(parts) == 3 and parts[2] == "USA" and parts[1] in STATE_NAMES:
+#             three_field[(parts[0], parts[1])] = (pid, parts)
+#         elif len(parts) == 4 and parts[3] == "USA" and (parts[1], parts[2]) in COUNTY_SET:
+#             four_field[(parts[0], parts[2])] = parts[1]
+# 
+#     for (city, state), (pid3, parts3) in three_field.items():
+#         if (city, state) in four_field:
+#             county = four_field[(city, state)]
+#             new_parts = [city, county, state, "USA"]
+#             new_name = join_place(new_parts)
+#             if dry_run:
+#                 print(f"📝 Would update PlaceID {pid3}: '{join_place(parts3)}' → '{new_name}'")
+#             else:
+#                 update_place_name(conn, pid3, new_name)
+#                 print(f"✅ Updated PlaceID {pid3}: '{join_place(parts3)}' → '{new_name}'")
+# 
+
+
+def infer_and_insert_missing_county(conn, dry_run=True, brief=False):
+    """
+    Scan PlaceTable for 3-field US place names (City, State, USA) and see if there’s a
+    corresponding 4-field (City, County, State, USA) match. If found, insert County into 3-field name.
+
+    Skips updates where the 4-field name has the same City and County (e.g., "Kankakee, Kankakee, Illinois, USA").
+    """
+    places = get_all_places(conn)
+    place_map = {pid: split_place(name) for pid, name in places}
+
+    reverse_lookup = {}  # {(city, state): (county, pid)}
+
+    # Build reference from 4-field names
+    for pid, fields in place_map.items():
+        if len(fields) == 4 and fields[3] == "USA":
+            city, county, state, _ = fields
+            if state in STATE_NAMES and (county, state) in US_COUNTIES:
+                # Skip if city == county (e.g., "Kankakee, Kankakee, Illinois, USA")
+                if city.strip().lower() == county.strip().lower():
+                    continue
+                reverse_lookup[(city.strip(), state.strip())] = (county.strip(), pid)
+
+
+    count = 0
+
+    # Check for 3-field names that could be enriched
+    for pid, fields in place_map.items():
+        if len(fields) == 3 and fields[2] == "USA":
+            city, state, _ = fields
+            key = (city.strip(), state.strip())
+            if key in reverse_lookup:
+                county, ref_pid = reverse_lookup[key]
+                new_fields = [city.strip(), county, state.strip(), "USA"]
+                new_name = join_place(new_fields)
+                if not brief:
+                    print(f"📝 Would update PlaceID {pid}: '{join_place(fields)}' → '{new_name}'")
+                count += 1
+                if not dry_run:
+                    if not brief:
+                        print(f"📝 Updating PlaceID {pid}: '{join_place(fields)}' → '{new_name}'")
+                    update_place_name(conn, pid, new_name)
+
+    if dry_run:
+        print(f"✅ Would update {count} places\n")
+    else:
+        print(f"✅ Updated {count} places\n")
+
 
 
 

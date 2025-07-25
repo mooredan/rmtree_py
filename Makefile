@@ -6,10 +6,10 @@ dump.log : $(wildcard *.py)
 	python3 dump_place_table.py  > dump.log
 
 
-devel.log : $(wildcard *.py)
-	python3 dump_place_table.py  > places-before.log
+devel.log : $(wildcard *.py) ${HOME}/Genealogy/ZebMoore_Ancestry.rmtree
+	# python3 dump_place_table.py  > places-before.log
 	python3 devel.py | tee devel.log
-	python3 dump_place_table.py  > places-after.log
+	# python3 dump_place_table.py  > places-after.log
 
 
 .PHONY: fuzzy

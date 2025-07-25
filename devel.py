@@ -17,6 +17,8 @@ from rmutils import (
     get_single_field_places,
     is_foreign_country,
     is_us_territory,
+    print_event_references_for_place_ids,
+    infer_and_insert_missing_county,
 )
 
 from normalizer import (
@@ -133,7 +135,27 @@ def devel():
     # conn.close()
     # return
 
+    infer_and_insert_missing_county(conn, dry_run=False)
 
+    #######################################################
+    # Find PlaceIDs where the place name is identical
+    # Find duplicates and merge
+    #######################################################
+    dupes = find_duplicate_place_names(conn, brief=False)
+    num_dupes = len(dupes)
+    print(f"Number of duplicates found: {num_dupes}\n")
+
+    # let's merge those, if there are duplicates
+    if num_dupes > 0:
+        merge_places(conn, dupes, dry_run=False, brief=False)
+
+
+    # return
+
+
+    ##################################
+    # Delete unused places
+    ##################################
     place_ids = get_all_place_ids(conn)
     unused_count = 0
     for pid in place_ids:
@@ -143,31 +165,47 @@ def devel():
             name = get_place_name_from_id(conn, pid)
             print(f"This PlaceID {pid} is not referenced: name: \"{name}\"")
             # dump_place_usage(conn, pid)
-            ret = delete_place_id(conn, pid, dry_run=False, brief=True)
+            ret = delete_place_id(conn, pid, dry_run=False, brief=False)
             if not ret:
                 print(f"🚫 delete_place_id returned False for pid: {pid}")
+    if unused_count > 0:
+        print(f"{unused_count} PlaceIDs were not used and deleted\n")
 
-    print(f"{unused_count} PlaceIDs were not used and deleted")
-    # return
 
+    ##################################################
     # do our best at renaming PlaceTable names
+    ##################################################
     normalize_place_names(conn, dry_run=False, brief=False)
+
+
+
 
     # delete_blank_place_records(conn, dry_run=False, brief=False)
 
+
+    #######################################################
     # Find PlaceIDs where the place name is identical
+    # Find duplicates and merge
+    #######################################################
     dupes = find_duplicate_place_names(conn, brief=False)
     num_dupes = len(dupes)
     print(f"Number of duplicates found: {num_dupes}\n")
 
-    # let's merge those
-    merge_places(conn, dupes, dry_run=False, brief=False)
+    # let's merge those, if there are duplicates
+    if num_dupes > 0:
+        merge_places(conn, dupes, dry_run=False, brief=False)
 
-    # what is left over?
-    # report_non_normalized_places(conn)
+
+
+
+
+    ##########################################################
+    # reporting and analysis
+    ##########################################################
 
     # report singles.....
-    my_list = []
+    name_list = []
+    pid_list = []
     single_field_places = get_single_field_places(conn)
     for pid, name in single_field_places:
         # print(f"{pid} {name}")
@@ -175,16 +213,25 @@ def devel():
             continue
         if (is_us_territory(name)):
             continue
-        print(f"{pid} {name}")
-        my_list.append(name)
+        # print(f"{pid} {name}")
+        name_list.append(name)
+        pid_list.append(pid)
 
 
-    with open("place_names.txt", "w", encoding="utf-8") as f:
-        for item in my_list:
-            f.write(item + "\n")
+    # with open("place_names.txt", "w", encoding="utf-8") as f:
+    #     for item in name_list:
+    #         f.write(item + "\n")
 
-    num_left_overs = len(my_list) 
-    print(f"leftovers: {num_left_overs}")
+    num_leftovers = len(name_list) 
+    if num_leftovers > 0:
+        print(f"leftovers: {num_leftovers}\n")
+        print_event_references_for_place_ids(conn, pid_list)
+        print(f"\n")
+
+
+
+
+
 
 
     find_matches_against_known_segments(conn)
