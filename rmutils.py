@@ -637,6 +637,8 @@ def report_non_normalized_places(conn, limit: int = 1000):
         print(f"\n🚩 Found {len(bad_places)} potentially non-normalized place names:")
         for pid, name, reason in bad_places:
             print(f"  [{pid}] {name}  ⟶  {reason}")
+            # dump_place_usage(conn, pid)
+            _print_event_references_for_place_id(conn, pid)
     else:
         print("✅ No suspicious place names detected.")
 
