@@ -137,7 +137,7 @@ def delete_unused_places(conn: sqlite3.Connection, dry_run=True, brief=False):
 
 
 
-def merge_places(conn: sqlite3.Connection, dry_run=True, brief=False):
+def do_merge_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     dupes = find_duplicate_place_names(conn, brief=brief)
     num_dupes = len(dupes)
     print(f"Number of duplicates found: {num_dupes}\n")
@@ -145,6 +145,9 @@ def merge_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     # let's merge those, if there are duplicates
     if num_dupes > 0:
         merge_places(conn, dupes, dry_run=dry_run, brief=brief)
+
+
+
 
 
 def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
@@ -157,7 +160,7 @@ def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     # Find PlaceIDs where the place name is identical
     # Find duplicates and merge
     #######################################################
-    merge_places(conn, dry_run=dry_run, brief=brief)
+    do_merge_places(conn, dry_run=dry_run, brief=brief)
 
 
     ##################################################
@@ -176,7 +179,7 @@ def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     # Find PlaceIDs where the place name is identical
     # Find duplicates and merge
     #######################################################
-    merge_places(conn, dry_run=dry_run, brief=brief)
+    do_merge_places(conn, dry_run=dry_run, brief=brief)
 
 
     #################################################
@@ -197,7 +200,7 @@ def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     # Find PlaceIDs where the place name is identical
     # Find duplicates and merge
     #######################################################
-    merge_places(conn, dry_run=dry_run, brief=brief)
+    do_merge_places(conn, dry_run=dry_run, brief=brief)
 
 
     ##################################
@@ -214,7 +217,7 @@ def devel():
     conn = get_connection()
 
     dry_run = False
-    brief = True
+    brief = False
 
     fix_places(conn, dry_run=dry_run, brief=brief)
 

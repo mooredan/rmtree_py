@@ -660,6 +660,7 @@ def normalize_once(pid, name, brief=True):
     name = re.sub(r'\bSaint\s+(?=\w)', 'St. ', name)
     name = re.sub(r'\bSt\s+(?=\w)', 'St. ', name)
     name = re.sub(r'\bPrince Georges\b', "Prince George's", name)
+    name = re.sub(r"Fond Du Lac", "Fond Du Lac", name)
 
 
 

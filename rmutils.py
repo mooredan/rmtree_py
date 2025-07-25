@@ -558,9 +558,24 @@ def report_non_normalized_places(conn, limit: int = 1000):
     for pid, name in cursor.fetchall():
         reasons = []
 
+
+        # Skip EE-acceptable place names
+        name_lc = name.lower().strip()
+        
+        # Rule 1: Accept historical territories without 'USA'
+        if name.endswith("Territory") and "USA" not in name:
+            continue
+        
+        # Rule 2: Accept full country names alone
+        if "," not in name and name in FOREIGN_COUNTRIES:
+            continue
+        
+        # Rule 3: Accept "At sea"
+        if name_lc == "at sea":
+            continue
+        
+
         parts = [p.strip() for p in name.split(",")]
-
-
 
         if not name.strip():
             reasons.append("empty or whitespace")
@@ -780,33 +795,33 @@ def dump_place_usage(conn: sqlite3.Connection, place_id: int):
 
 
 
-def is_place_referenced(conn: sqlite3.Connection, place_id: int, quiet=True) -> bool:
+def is_place_referenced(conn: sqlite3.Connection, place_id: int, quiet=True, debug=False) -> bool:
     """
     Check if a PlaceID is referenced by any other table in the database.
     Prints a report and returns True if found elsewhere, False if orphaned.
     """
-    if not quiet:
+    if debug:
         print(f"\n==== PLACE USAGE CHECK FOR PlaceID: {place_id} ====")
     referenced = False
 
     # 1. EventTable
     rows = conn.execute("SELECT EventID FROM EventTable WHERE PlaceID = ?", (place_id,)).fetchall()
     if rows:
-        if not quiet:
+        if debug:
             print(f"-- Referenced in EventTable: {len(rows)} rows")
         referenced = True
 
     # 2. MediaLinkTable (OwnerType = 14 = Place)
     rows = conn.execute("SELECT MediaID FROM MediaLinkTable WHERE OwnerType = 14 AND OwnerID = ?", (place_id,)).fetchall()
     if rows:
-        if not quiet:
+        if debug:
             print(f"-- Referenced in MediaLinkTable: {len(rows)} rows")
         referenced = True
 
     # 3. TaskLinkTable (OwnerType = 5 or 14 = Place)
     rows = conn.execute("SELECT TaskID FROM TaskLinkTable WHERE OwnerType IN (5, 14) AND OwnerID = ?", (place_id,)).fetchall()
     if rows:
-        if not quiet:
+        if debug:
             print(f"-- Referenced in TaskLinkTable: {len(rows)} rows")
         referenced = True
 
@@ -814,15 +829,15 @@ def is_place_referenced(conn: sqlite3.Connection, place_id: int, quiet=True) -> 
     # 4. URLTable (OwnerType = 5 = Place)
     rows = conn.execute("SELECT LinkID FROM URLTable WHERE OwnerType = 5 AND OwnerID = ?", (place_id,)).fetchall()
     if rows:
-        if not quiet:
+        if debug:
             print(f"-- Referenced in URLTable: {len(rows)} rows")
         referenced = True
 
     if not referenced:
-        if not quiet:
+        if debug:
             print("-- No external references found.")
 
-    if not quiet:
+    if debug:
         print("==== END CHECK ====\n")
 
     return referenced

@@ -310,6 +310,14 @@ Yuma|Colorado
 Capitol|Connecticut
 Greater Bridgeport|Connecticut
 Lower Connecticut River Valley|Connecticut
+Fairfield|Connecticut
+New Haven|Connecticut
+New London|Connecticut
+Tolland|Connecticut
+Windham|Connecticut
+Hartford|Connecticut
+Litchfield|Connecticut
+Middlesex|Connecticut
 Naugatuck Valley|Connecticut
 Northeastern Connecticut|Connecticut
 Northwest Hills|Connecticut
