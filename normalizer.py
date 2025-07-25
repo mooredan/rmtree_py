@@ -9,6 +9,7 @@ from config import (
     STATE_ABBREVIATIONS,
     OLD_STYLE_ABBR,
     STATE_NAMES,
+    US_PLACES,
     FOREIGN_COUNTRIES,
     COMMON_PLACE_MAPPINGS,
     MEXICAN_STATES,
@@ -314,10 +315,11 @@ def normalize_once(pid, name, brief=True):
             name = replacement
             break  # Exact match found, skip further mapping
 
+
     # If 4 fields and ends with USA, remove ' County' from second field
     parts = [p.strip() for p in name.split(",")]
     if len(parts) == 4 and parts[-1].upper() == "USA":
-        if " County" in parts[1]:
+        if " County" in parts[1] and not is_legitimate_us_place_name(parts):
             parts[1] = parts[1].replace(" County", "")
             name = ", ".join(parts)
 
@@ -727,12 +729,14 @@ def normalize_once(pid, name, brief=True):
     if parts[-1] in MEXICAN_STATES and not name.endswith(", Mexiso"):
         name += ", Mexiso"
 
+
     # If 4 fields and ends with USA, remove ' County' from second field
     parts = [p.strip() for p in name.split(",")]
     if len(parts) == 4 and parts[-1].upper() == "USA":
-        if " County" in parts[1]:
+        if " County" in parts[1] and not is_legitimate_us_place_name(parts):
             parts[1] = parts[1].replace(" County", "")
             name = ", ".join(parts)
+
 
     # Fix repeated state name before 'USA'
     parts = [p.strip() for p in name.split(",")]
@@ -818,6 +822,25 @@ def normalize_place_names(conn: sqlite3.Connection, dry_run=True, brief=True):
         print("ℹ️  Dry run only. No changes made. Use dry_run=False to apply.")
 
 
+def is_legitimate_us_place_name(parts: list[str]) -> bool:
+    """
+    Returns True if parts[1] includes 'County', parts[2] is a valid US state name,
+    and (parts[1] without ' County', parts[2]) is a valid (county, state) pair.
+    Intended for protecting legitimate US county names in normalization.
+    """
+    if len(parts) != 4 or parts[-1].strip().upper() != "USA":
+        return False
+
+    county_field = parts[1].strip()
+    state = parts[2].strip()
+
+    if "County" not in county_field or state not in STATE_NAMES:
+        return False
+
+    county_name = county_field.replace(" County", "").strip()
+    return (county_name, state) in US_COUNTIES
+
+
 def is_nonsensical_place_name(name):
     if name is None:
         return True
@@ -885,6 +908,83 @@ def standardize_us_county_name(name, counties_db, state_list):
     return name  # No match found
 
 
+
+# def suggest_us_place_correction(place: str) -> str:
+#     """
+#     Suggest a normalized version of a U.S. place name if it matches a known
+#     <City, County, State> triple from US_PLACES.
+# 
+#     - Only considers 4-part place names that end in "USA"
+#     - Must have a known U.S. state in the third field
+#     - First and second fields must be identical
+#     - Attempts to insert "County" into the second field and see if that
+#       corrected version is listed in US_PLACES
+# 
+#     Returns the normalized name if found, otherwise returns the original input.
+#     """
+#     parts = [p.strip() for p in place.split(",")]
+#     if len(parts) != 4 or parts[-1].upper() != "USA":
+#         return place  # Must be 4-part ending in USA
+# 
+#     city, county_candidate, state, country = parts
+# 
+#     if city.lower() != county_candidate.lower():
+#         return place  # First two fields must match
+# 
+#     if state not in STATE_NAMES:
+#         return place  # Not a known U.S. state
+# 
+#     county_name = f"{county_candidate} County"
+#     candidate_tuple = (city, county_name, state)
+# 
+#     if candidate_tuple in US_PLACES:
+#         return f"{city}, {county_name}, {state}, {country}"
+# 
+#     return place
+
+
+
+def suggest_us_place_correction(place: str) -> str:
+    """
+    Normalize place names of the form 'City, City, State, USA' using US_PLACES,
+    but only if the derived county and state pair is also found in US_COUNTIES.
+
+    If the derived county is not a real county, emit a warning and return
+    the original name.
+    """
+    parts = [p.strip() for p in place.split(",")]
+    if len(parts) != 4 or parts[-1].upper() != "USA":
+        return place  # Must be 4-part ending in USA
+
+    city, county_candidate, state, country = parts
+
+    if city.lower() != county_candidate.lower():
+        return place  # First two fields must match
+
+    if state not in STATE_NAMES:
+        return place  # Not a known U.S. state
+
+    county_name = f"{county_candidate} County"
+    candidate_tuple = (city, county_name, state)
+
+    if candidate_tuple in US_PLACES:
+        # Validate that the county is legitimate
+        if (county_candidate, state) in US_COUNTIES:
+            return f"{city}, {county_name}, {state}, {country}"
+        else:
+            print(f"⚠️ Warning: '{county_name}, {state}' not in US_COUNTIES. Skipping normalization of '{place}'")
+            return place
+
+    return place
+
+
+
+def normalize_if_matched(place: str) -> tuple[str, bool]:
+    """
+    Return a tuple of (normalized_place, changed_flag)
+    """
+    normalized = suggest_us_place_correction(place)
+    return normalized, (normalized != place)
 
 
 

@@ -19,12 +19,14 @@ from rmutils import (
     is_us_territory,
     print_event_references_for_place_ids,
     infer_and_insert_missing_county,
+    update_place_name,
 )
 
 from normalizer import (
     strip_address_if_present,
     normalize_place_names,
     normalize_place_iteratively,
+    normalize_if_matched,
 )
 
 
@@ -115,94 +117,112 @@ def test_addresses():
            return True 
 
 
-def devel():
-    # open the connection to the database
-
-    conn = get_connection()
-
-    # # test_strip_address_by_pid(conn, 4906)
-    # test_strip_address_by_name(conn, "511 E. North St.")
-    # return
-
-    # rtn = test_addresses()
-    # return
-
-    # for place_id in {5837, 4582, 6034, 4906, 4354, 4975, 5185, 476, 2678}:
-    #    test_pid(conn, place_id)
-    # return
-
-    # find_matches_against_known_segments(conn)
-    # conn.close()
-    # return
-
-    infer_and_insert_missing_county(conn, dry_run=False)
-
-    #######################################################
-    # Find PlaceIDs where the place name is identical
-    # Find duplicates and merge
-    #######################################################
-    dupes = find_duplicate_place_names(conn, brief=False)
-    num_dupes = len(dupes)
-    print(f"Number of duplicates found: {num_dupes}\n")
-
-    # let's merge those, if there are duplicates
-    if num_dupes > 0:
-        merge_places(conn, dupes, dry_run=False, brief=False)
 
 
-    # return
-
-
-    ##################################
-    # Delete unused places
-    ##################################
+def delete_unused_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     place_ids = get_all_place_ids(conn)
     unused_count = 0
     for pid in place_ids:
         # Do something with each PlaceID
-        if not is_place_referenced(conn, pid, quiet=True):
+        if not is_place_referenced(conn, pid, quiet=brief):
             unused_count += 1
             name = get_place_name_from_id(conn, pid)
             print(f"This PlaceID {pid} is not referenced: name: \"{name}\"")
             # dump_place_usage(conn, pid)
-            ret = delete_place_id(conn, pid, dry_run=False, brief=False)
+            ret = delete_place_id(conn, pid, dry_run=dry_run, brief=brief)
             if not ret:
                 print(f"🚫 delete_place_id returned False for pid: {pid}")
     if unused_count > 0:
         print(f"{unused_count} PlaceIDs were not used and deleted\n")
 
 
+
+def merge_places(conn: sqlite3.Connection, dry_run=True, brief=False):
+    dupes = find_duplicate_place_names(conn, brief=brief)
+    num_dupes = len(dupes)
+    print(f"Number of duplicates found: {num_dupes}\n")
+
+    # let's merge those, if there are duplicates
+    if num_dupes > 0:
+        merge_places(conn, dupes, dry_run=dry_run, brief=brief)
+
+
+def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
+    ##################################
+    # Delete unused places
+    ##################################
+    delete_unused_places(conn, dry_run=dry_run, brief=brief)
+
+    #######################################################
+    # Find PlaceIDs where the place name is identical
+    # Find duplicates and merge
+    #######################################################
+    merge_places(conn, dry_run=dry_run, brief=brief)
+
+
     ##################################################
     # do our best at renaming PlaceTable names
     ##################################################
-    normalize_place_names(conn, dry_run=False, brief=False)
+    normalize_place_names(conn, dry_run=dry_run, brief=brief)
 
 
-
-
-    # delete_blank_place_records(conn, dry_run=False, brief=False)
+    ####################################################
+    # Fix up missing county
+    ####################################################
+    infer_and_insert_missing_county(conn, dry_run=dry_run)
 
 
     #######################################################
     # Find PlaceIDs where the place name is identical
     # Find duplicates and merge
     #######################################################
-    dupes = find_duplicate_place_names(conn, brief=False)
-    num_dupes = len(dupes)
-    print(f"Number of duplicates found: {num_dupes}\n")
-
-    # let's merge those, if there are duplicates
-    if num_dupes > 0:
-        merge_places(conn, dupes, dry_run=False, brief=False)
+    merge_places(conn, dry_run=dry_run, brief=brief)
 
 
+    #################################################
+    # fix up quadruples that have an obvious missing
+    # county name
+    #################################################
+    place_ids = get_all_place_ids(conn)
+    for pid in place_ids:
+        place = get_place_name_from_id(conn, pid)
+        normalized_place, was_changed = normalize_if_matched(place)
+        if was_changed:
+            print(f"✔ Normalized: {place} → {normalized_place}")
+            print(f"📝 Updating PlaceID: {pid} name to {normalized_place}'")
+            update_place_name(conn, pid, normalized_place)
+    
+
+    #######################################################
+    # Find PlaceIDs where the place name is identical
+    # Find duplicates and merge
+    #######################################################
+    merge_places(conn, dry_run=dry_run, brief=brief)
+
+
+    ##################################
+    # Delete unused places
+    ##################################
+    delete_unused_places(conn, dry_run=dry_run, brief=brief)
+
+
+
+
+
+def devel():
+    # open the connection to the database
+    conn = get_connection()
+
+    dry_run = False
+    brief = True
+
+    fix_places(conn, dry_run=dry_run, brief=brief)
 
 
 
     ##########################################################
     # reporting and analysis
     ##########################################################
-
     # report singles.....
     name_list = []
     pid_list = []
@@ -230,14 +250,11 @@ def devel():
 
 
 
-
-
-
-
     find_matches_against_known_segments(conn)
 
     # what is left over?
     report_non_normalized_places(conn)
+
 
     conn.close()
 

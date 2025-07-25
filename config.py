@@ -654,5 +654,24 @@ def load_us_counties(filename="us_counties.txt"):
 US_COUNTIES = load_us_counties()
 
 
+def load_us_places(filename="us_places.txt"):
+    """Load city–county–state mappings into a list of 3-tuples."""
+    places = []
+    base_path = os.path.dirname(__file__)
+    path = os.path.join(base_path, filename)
+
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("|")
+            if len(parts) == 3:
+                places.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
+    return places
+
+
+US_PLACES = load_us_places()
+
 
 
