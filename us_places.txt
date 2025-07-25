@@ -1,0 +1,123 @@
+# Abbeville|Abbeville County|South Carolina
+# Adair|Adair County|Iowa
+# Aiken|Aiken County|South Carolina
+# Alamosa|Alamosa County|Colorado
+# Allegan|Allegan County|Michigan
+# Anchorage|Anchorage County|Alaska
+# Anderson|Anderson County|South Carolina
+# Arlington|Arlington County|Virginia
+# Ashtabula|Ashtabula County|Ohio
+# Ashtabula|Ashtabula
+# Baltimore|Baltimore County|Maryland
+# Beaufort|Beaufort County|South Carolina
+# Boulder|Boulder County|Colorado
+# Bronx|Bronx County|New York
+# Bureau|Bureau County|Illinois
+# Burlington|Burlington County|New Jersey
+# Burnet|Burnet County|Texas
+# Champaign|Champaign County|Illinois
+# Charleston|Charleston County|South Carolina
+# Clay|Clay County|Illinois
+# Cortland|Cortland County|New York
+# Culpeper|Culpeper County|Virginia
+# Dallas|Dallas County|Texas
+# Delaware|Delaware County|Ohio
+# Denver|Denver County|Colorado
+# Dickson|Dickson County|Tennessee
+# Durham|Durham County|North Carolina
+# Elkhart|Elkhart County|Indiana
+# Ellis|Ellis County|Kansas
+# Fairfield|Fairfield County|Connecticut
+# Florence|Florence County|South Carolina
+# Fond Du Lac|Fond Du Lac County|Wisconsin
+# Franklin|Franklin County|Ohio
+Frederick|Frederick County|Maryland
+Freeborn|Freeborn County|Minnesota
+# Huntingdon|Huntingdon County|Pennsylvania
+Harlan|Harlan County|Kentucky
+# Georgetown|Georgetown County|South Carolina
+# Grand Forks|Grand Forks County|North Dakota
+# Haskell|Haskell County|Texas
+# Hillsdale|Hillsdale County|Michigan
+# Honolulu|Honolulu County|Hawaii
+# Hood River|Hood River County|Oregon
+# Hopkins|Hopkins County|Texas
+# Huntington|Huntington County|Indiana
+# Iroquois|Iroquois County|Illinois
+# Jackson|Jackson County|Michigan
+# Kalamazoo|Kalamazoo County|Michigan
+# Kankakee|Kankakee County|Illinois
+# Knox|Knox County|Illinois
+# La Porte|La Porte County|Indiana
+# Labette|Labette County|Kansas
+# LaGrange|LaGrange County|Indiana
+# Lampasas|Lampasas County|Texas
+# Lancaster|Lancaster County|South Carolina
+# Laurens|Laurens County|South Carolina
+# Lawrence|Lawrence County|Ohio
+# Leavenworth|Leavenworth County|Kansas
+# Little River|Little River County|Arkansas
+# Los Angeles|Los Angeles County|California
+# Lubbock|Lubbock County|Texas
+# Macon|Macon County|Illinois
+# Macon|Macon County|Missouri
+# Madera|Madera County|California
+# Madison|Madison County|Iowa
+# Medina|Medina County|Ohio
+# Mercer|Mercer County|Illinois
+# Mercer|Mercer County|Missouri
+# Miami|Miami County|Indiana
+# Miami|Miami County|Kansas
+# Missoula|Missoula County|Montana
+# Muskegon|Muskegon County|Michigan
+# Muskogee|Muskogee County|Oklahoma
+# New Haven|New Haven County|Connecticut
+# Newport|Newport County|Rhode Island
+# Okanogan|Okanogan County|Washington
+# Orange|Orange County|California
+# Orange|Orange County|Virginia
+# Pawnee|Pawnee County|Oklahoma
+# Payette|Payette County|Idaho
+# Peoria|Peoria County|Illinois
+# Philadelphia|Philadelphia County|Pennsylvania
+# Pierce|Pierce County|Nebraska
+# Pocahontas|Pocahontas County|Iowa
+# Pratt|Pratt County|Kansas
+# Pueblo|Pueblo County|Colorado
+# Putnam|Putnam County|Indiana
+# Riverside|Riverside County|California
+# Roanoke|Roanoke County|Virginia
+# Rock Island|Rock Island County|Illinois
+# Russell|Russell County|Kansas
+# Sacramento|Sacramento County|California
+# Saginaw|Saginaw County|Michigan
+# Salt Lake|Salt Lake County|Utah
+# San Bernardino|San Bernardino County|California
+# San Diego|San Diego County|California
+# San Francisco|San Francisco County|California
+# Santa Clara|Santa Clara County|California
+# Scott|Scott County|Kansas
+# Sheridan|Sheridan County|Wyoming
+# Spokane|Spokane County|Washington
+# St. Louis City|St. Louis City County|Missouri
+# St. Louis|St. Louis County|Missouri
+# Staunton|Staunton County|Virginia
+# Tishomingo|Tishomingo County|Mississippi
+# Tulsa|Tulsa County|Oklahoma
+# Twin Falls|Twin Falls County|Idaho
+# Union|Union County|Oregon
+# Van Buren|Van Buren County|Iowa
+# Ventura|Ventura County|California
+# Vinton|Vinton County|Ohio
+# Virginia|Virginia
+# Wabash|Wabash County|Indiana
+# Walla Walla|Walla Walla County|Washington
+# Warren|Warren County|Indiana
+# Warren|Warren County|Iowa
+# Washington|Washington County|District of Columbia
+# Washington|Washington County|Iowa
+# Wayne|Wayne County|Nebraska
+# Whitley|Whitley County|Kentucky
+# Yakima|Yakima County|Washington
+# Yankton|Yankton County|South Dakota
+# Yuma|Yuma County|Arizona
