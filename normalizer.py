@@ -12,6 +12,7 @@ from config import (
     US_PLACES,
     FOREIGN_COUNTRIES,
     COMMON_PLACE_MAPPINGS,
+    SPECIAL_PLACE_MAPPINGS,
     MEXICAN_STATES,
     CANADIAN_PROVINCES,
     HISTORICAL_US_TERRITORIES,
@@ -19,7 +20,6 @@ from config import (
 
 
 def fix_address(address):
-    # print(f"{address}")
     m = re.match(r".*\b[NS]\. *[EW]\.*$", address, flags=re.IGNORECASE)
     if m:
         # print(f"match: {m}")
@@ -316,6 +316,14 @@ def normalize_once(pid, name, brief=True):
             break  # Exact match found, skip further mapping
 
 
+    # Check for exact match in SPECIAL_PLACE_MAPPINGS
+    key = name.strip()
+    for pattern, replacement in SPECIAL_PLACE_MAPPINGS.items():
+        if key == pattern:
+            name = replacement
+            break  # Exact match found, skip further mapping
+
+
     # If 4 fields and ends with USA, remove ' County' from second field
     parts = [p.strip() for p in name.split(",")]
     if len(parts) == 4 and parts[-1].upper() == "USA":
@@ -324,13 +332,28 @@ def normalize_once(pid, name, brief=True):
             name = ", ".join(parts)
 
 
+    # If 4 fields and ends with USA, remove ' County' from second field
+    parts = [p.strip() for p in name.split(",")]
+    if len(parts) == 4 and parts[-1].upper() == "USA":
+        if " County" in parts[1] and is_legitimate_us_place_name(parts):
+            town = parts[0].lower()
+            no_county = parts[1].replace(" County", "").lower()
+            if not (town == no_county):
+                state = parts[2].lower()
+                if not (state == no_county):
+                    no_county = parts[1].replace(" County", "")
+                    parts[1] = no_county
+                    name = ", ".join(parts)
+
+
+    name = correct_misordered_county_name(name, brief=brief)
+
 
     # If 5 fields and ends with USA, and the first and second fields are indentical
     # remove the first field 
     parts = [p.strip() for p in name.split(",")]
     if len(parts) == 5 and parts[-1].upper() == "USA":
         if parts[0] == parts[1]:
-            # print(f"first two parts match")
             name = ", ".join(parts[1:-1])
 
 
@@ -451,28 +474,6 @@ def normalize_once(pid, name, brief=True):
     if m:
         name = re.sub(r'^(.*?\s+Township)', r'\1,', name, re.IGNORECASE)
 
-
-
-
-    # # Strip "Township" from first field if in valid US state (except NJ, PA) and not a survey-style township
-    # lines = name.split(",")
-    # if len(lines) >= 3:
-    #     state = lines[-2].strip()
-    #     country = lines[-1].strip()
-    #     first_field = lines[0].strip()
-
-    #     if (
-    #         country == "USA"
-    #         and state in STATE_NAMES
-    #         and state not in {"New Jersey", "Pennsylvania"}
-    #         and "Township" in first_field
-    #         and not re.search(r'\bTownship\s+\d+.*\bRange\b', first_field, re.IGNORECASE)
-    #     ):
-    #         # Remove "Township" and any trailing comma
-    #         new_first = re.sub(r'\bTownship\b[,]?\s*', '', first_field).strip()
-    #         lines[0] = new_first
-    #         name = ", ".join([part.strip() for part in lines])
-    #         return name  # Safe early return
 
 
 
@@ -745,8 +746,25 @@ def normalize_once(pid, name, brief=True):
         # Check if the second-to-last and third-to-last parts are the same
         if parts[-2].lower() == parts[-3].lower():
             # Remove the redundant part
-            del parts[-3]
-            name = ", ".join(parts)
+            # are only going to do this when the state doesn't have a county
+            # with the same name
+            # 
+            # but take this opportunity to add the word County to the 
+            # County name to make it clear
+            if not (parts[-2].lower() == "arkansas" or
+                    parts[-2].lower() == "idaho" or
+                    parts[-2].lower() == "oklahoma" or
+                    parts[-2].lower() == "iowa" or
+                    parts[-2].lower() == "utah" or
+                    parts[-2].lower() == "hawaii" or
+                    parts[-2].lower() == "new york"):
+                del parts[-3]
+                name = ", ".join(parts)
+            else:
+                county = parts[-3]
+                county += " County"
+                parts[-3] = county
+                name = ", ".join(parts)
 
     # # Standarize when only the county is known to a list
     # # of known USA counties
@@ -857,6 +875,24 @@ def is_nonsensical_place_name(name):
     return False
 
 
+
+
+def correct_misordered_county_name(name: str, brief: bool=False) -> str:
+    """
+    Fix place names like 'Clay County, Clay, Indiana, USA' → 'Clay, Clay County, Indiana, USA'
+    Only apply fix if county-state pair is in US_COUNTIES.
+    """
+    parts = [p.strip() for p in name.split(",")]
+    if len(parts) == 4 and parts[-1].upper() == "USA":
+        state = parts[2]
+        if state in STATE_NAMES and parts[0].endswith(" County"):
+            county_name = parts[0].replace(" County", "")
+            if (county_name, state) in US_COUNTIES:
+                return f"{parts[1]}, {parts[0]}, {state}, USA"
+    return name  # no change
+
+
+
 def fix_missing_commas_in_county_state(name: str) -> str:
     """
     Fix entries like "Edinburg Shenandoah, Virginia, USA" to "Edinburg, Shenandoah, Virginia, USA"
@@ -910,41 +946,6 @@ def standardize_us_county_name(name, counties_db, state_list):
 
 
 
-# def suggest_us_place_correction(place: str) -> str:
-#     """
-#     Suggest a normalized version of a U.S. place name if it matches a known
-#     <City, County, State> triple from US_PLACES.
-# 
-#     - Only considers 4-part place names that end in "USA"
-#     - Must have a known U.S. state in the third field
-#     - First and second fields must be identical
-#     - Attempts to insert "County" into the second field and see if that
-#       corrected version is listed in US_PLACES
-# 
-#     Returns the normalized name if found, otherwise returns the original input.
-#     """
-#     parts = [p.strip() for p in place.split(",")]
-#     if len(parts) != 4 or parts[-1].upper() != "USA":
-#         return place  # Must be 4-part ending in USA
-# 
-#     city, county_candidate, state, country = parts
-# 
-#     if city.lower() != county_candidate.lower():
-#         return place  # First two fields must match
-# 
-#     if state not in STATE_NAMES:
-#         return place  # Not a known U.S. state
-# 
-#     county_name = f"{county_candidate} County"
-#     candidate_tuple = (city, county_name, state)
-# 
-#     if candidate_tuple in US_PLACES:
-#         return f"{city}, {county_name}, {state}, {country}"
-# 
-#     return place
-
-
-
 def suggest_us_place_correction(place: str) -> str:
     """
     Normalize place names of the form 'City, City, State, USA' using US_PLACES,
@@ -977,6 +978,42 @@ def suggest_us_place_correction(place: str) -> str:
             return place
 
     return place
+
+
+def assign_county_if_known_place(place: str) -> str:
+    """
+    To a three part place, ending in USA, and if
+    it is a actual state
+    If the derived county is not a real county, emit a warning and return
+    the original name.
+    """
+    parts = [p.strip() for p in place.split(",")]
+    if len(parts) != 3 or parts[-1].upper() != "USA":
+        return place  # Must be 4-part ending in USA
+
+    city, state, country = parts
+
+    if state not in STATE_NAMES:
+        return place  # Not a known U.S. state
+
+    for entry in US_PLACES:
+        if len(entry) != 3:
+            continue
+        entry_city, entry_county, entry_state = entry
+
+        if city == entry_city and state == entry_state:
+            county_clean = entry_county.replace(" County", "").strip()
+            return f"{city}, {county_clean}, {state}, {country}"
+
+    return place
+
+
+def known_county_inserted(place: str) -> tuple[str, bool]:
+    """
+    Return a tuple of (normalized_place, changed_flag)
+    """
+    normalized = assign_county_if_known_place(place)
+    return normalized, (normalized != place)
 
 
 

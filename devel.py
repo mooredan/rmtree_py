@@ -27,6 +27,8 @@ from normalizer import (
     normalize_place_names,
     normalize_place_iteratively,
     normalize_if_matched,
+    assign_county_if_known_place,
+    known_county_inserted,
 )
 
 
@@ -182,6 +184,7 @@ def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
     do_merge_places(conn, dry_run=dry_run, brief=brief)
 
 
+
     #################################################
     # fix up quadruples that have an obvious missing
     # county name
@@ -194,7 +197,25 @@ def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
             print(f"✔ Normalized: {place} → {normalized_place}")
             print(f"📝 Updating PlaceID: {pid} name to {normalized_place}'")
             update_place_name(conn, pid, normalized_place)
-    
+
+
+
+    #################################################
+    # fix triples in the USA that are missing the
+    # county, but state is known
+    # e.g. Wadsworth, Illinois, USA should become
+    #      Wadsworth, Lake, Illinois, USA
+    #################################################
+    place_ids = get_all_place_ids(conn)
+    for pid in place_ids:
+        place = get_place_name_from_id(conn, pid)
+        normalized_place, was_changed = known_county_inserted(place)
+        if was_changed:
+            print(f"✔ County added: {place} → {normalized_place}")
+            print(f"📝 Updating PlaceID: {pid} name to {normalized_place}'")
+            update_place_name(conn, pid, normalized_place)
+
+
 
     #######################################################
     # Find PlaceIDs where the place name is identical
@@ -210,19 +231,7 @@ def fix_places(conn: sqlite3.Connection, dry_run=True, brief=False):
 
 
 
-
-
-def devel():
-    # open the connection to the database
-    conn = get_connection()
-
-    dry_run = False
-    brief = False
-
-    fix_places(conn, dry_run=dry_run, brief=brief)
-
-
-
+def funny_place_report (conn: sqlite3.Connection, brief: bool = False):
     ##########################################################
     # reporting and analysis
     ##########################################################
@@ -235,6 +244,8 @@ def devel():
         if (is_foreign_country(name)):
             continue
         if (is_us_territory(name)):
+            continue
+        if name == "Mexico":
             continue
         # print(f"{pid} {name}")
         name_list.append(name)
@@ -251,13 +262,24 @@ def devel():
         print_event_references_for_place_ids(conn, pid_list)
         print(f"\n")
 
-
-
     find_matches_against_known_segments(conn)
 
     # what is left over?
     report_non_normalized_places(conn)
 
+
+
+
+def devel():
+    # open the connection to the database
+    conn = get_connection()
+
+    dry_run = False
+    brief = False
+
+    fix_places(conn, dry_run=dry_run, brief=brief)
+
+    funny_place_report(conn, brief=False)
 
     conn.close()
 

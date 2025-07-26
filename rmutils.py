@@ -538,7 +538,7 @@ def table_has_column(cursor, table_name, column_name):
 
 
 
-def report_non_normalized_places(conn, limit: int = 1000):
+def report_non_normalized_places(conn, limit: int = 1000, show_references: bool = False):
     """
     Scans PlaceTable and reports place names that appear non-normalized,
     such as:
@@ -576,6 +576,18 @@ def report_non_normalized_places(conn, limit: int = 1000):
         
 
         parts = [p.strip() for p in name.split(",")]
+
+
+        # detect things like "Clay County, Clay, Indiana, USA"
+        if len(parts) == 4 and parts[-1].upper() == "USA":
+            state = parts[2].strip()
+            if state in STATE_NAMES and parts[0].endswith(" County"):
+                reasons.append("county name misordered")
+
+
+        if is_non_county_missing_county(name):
+            reasons.append("USA place missing county")
+
 
         if not name.strip():
             reasons.append("empty or whitespace")
@@ -638,7 +650,8 @@ def report_non_normalized_places(conn, limit: int = 1000):
         for pid, name, reason in bad_places:
             print(f"  [{pid}] {name}  ⟶  {reason}")
             # dump_place_usage(conn, pid)
-            _print_event_references_for_place_id(conn, pid)
+            if show_references:
+                _print_event_references_for_place_id(conn, pid)
     else:
         print("✅ No suspicious place names detected.")
 
@@ -1134,6 +1147,22 @@ def infer_and_insert_missing_county(conn, dry_run=True, brief=False):
 
 
 
+
+
+def is_non_county_missing_county(place: str) -> bool:
+    parts = [p.strip() for p in place.split(",")]
+    if len(parts) != 3:
+        return False
+    city, state, country = parts
+    if country.upper() != "USA":
+        return False
+    if state not in STATE_NAMES:
+        return False
+    if city.endswith(" County"):
+        return False
+    if (city, state) in US_COUNTIES:
+        return False
+    return True
 
 
 

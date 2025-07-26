@@ -340,6 +340,7 @@ Citrus|Florida
 Clay|Florida
 Collier|Florida
 Columbia|Florida
+Dade|Florida
 DeSoto|Florida
 Dixie|Florida
 Duval|Florida
@@ -1724,6 +1725,7 @@ Loup|Nebraska
 Madison|Nebraska
 McPherson|Nebraska
 Merrick|Nebraska
+Monroe|Nebraska
 Morrill|Nebraska
 Nance|Nebraska
 Nemaha|Nebraska

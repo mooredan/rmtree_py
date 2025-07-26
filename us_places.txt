@@ -1,121 +1,563 @@
-Abbeville|Abbeville County|South Carolina
-Adair|Adair County|Iowa
-Aiken|Aiken County|South Carolina
-Alamosa|Alamosa County|Colorado
-Allegan|Allegan County|Michigan
+Orange Beach|Baldwin County|Alabama
+Oneonta|Blount County|Alabama
+Evergreen|Conecuh County|Alabama
+Athens|Limestone County|Alabama
 Anchorage|Anchorage County|Alaska
-Anderson|Anderson County|South Carolina
-Arlington|Arlington County|Virginia
-Ashtabula|Ashtabula County|Ohio
-Baltimore|Baltimore County|Maryland
-Beaufort|Beaufort County|South Carolina
-Boulder|Boulder County|Colorado
-Bronx|Bronx County|New York
-Bureau|Bureau County|Illinois
-Burlington|Burlington County|New Jersey
-Burnet|Burnet County|Texas
-Champaign|Champaign County|Illinois
-Charleston|Charleston County|South Carolina
-Clay|Clay County|Illinois
-Cortland|Cortland County|New York
-Culpeper|Culpeper County|Virginia
-Dallas|Dallas County|Texas
-Delaware|Delaware County|Ohio
-Denver|Denver County|Colorado
-Dickson|Dickson County|Tennessee
-Durham|Durham County|North Carolina
-Elkhart|Elkhart County|Indiana
-Ellis|Ellis County|Kansas
-Fairfield|Fairfield County|Connecticut
-Florence|Florence County|South Carolina
-Fond du Lac|Fond du Lac County|Wisconsin
-Franklin|Franklin County|Ohio
-Frederick|Frederick County|Maryland
-Freeborn|Freeborn County|Minnesota
-Huntingdon|Huntingdon County|Pennsylvania
-Harlan|Harlan County|Kentucky
-Georgetown|Georgetown County|South Carolina
-Grand Forks|Grand Forks County|North Dakota
-Haskell|Haskell County|Texas
-Hillsdale|Hillsdale County|Michigan
-Honolulu|Honolulu County|Hawaii
-Hood River|Hood River County|Oregon
-Hopkins|Hopkins County|Texas
-Huntington|Huntington County|Indiana
-Iroquois|Iroquois County|Illinois
-Jackson|Jackson County|Michigan
-Kalamazoo|Kalamazoo County|Michigan
-Kankakee|Kankakee County|Illinois
-Knox|Knox County|Illinois
-La Porte|LaPorte County|Indiana
-Labette|Labette County|Kansas
-LaGrange|LaGrange County|Indiana
-Lampasas|Lampasas County|Texas
-Lancaster|Lancaster County|South Carolina
-Laurens|Laurens County|South Carolina
-Lawrence|Lawrence County|Ohio
-Leavenworth|Leavenworth County|Kansas
+Eagle River|Anchorage County|Alaska
+Globe|Gila County|Arizona
+Litchfield Park|Maricopa County|Arizona
+Arizona City|Pinal County|Arizona
+Sedona|Yavapai County|Arizona
+Yuma|Yuma County|Arizona
+Stuttgart|Arkansas County|Arkansas
+Harrison|Boone County|Arkansas
+Lawrence|Lawrence County|Arkansas
 Little River|Little River County|Arkansas
+Camp Pike|Pulaski County|Arkansas
+Jacksonville|Pulaski County|Arkansas
+Huttig|Union County|Arkansas
+Rescue|El Dorado County|California
+Canoga Park|Los Angeles County|California
+Chatsworth|Los Angeles County|California
+Downey|Los Angeles County|California
+La Verne|Los Angeles County|California
 Los Angeles|Los Angeles County|California
-Lubbock|Lubbock County|Texas
-Macon|Macon County|Illinois
-Macon|Macon County|Missouri
+Los Angeles City|Los Angeles County|California
+San Pedro|Los Angeles County|California
+Torrance|Los Angeles County|California
+Woodland Hills|Los Angeles County|California
 Madera|Madera County|California
-Madison|Madison County|Iowa
-Medina|Medina County|Ohio
-Mercer|Mercer County|Illinois
-Mercer|Mercer County|Missouri
-Miami|Miami County|Indiana
-Miami|Miami County|Kansas
-Missoula|Missoula County|Montana
-Muskegon|Muskegon County|Michigan
-Muskogee|Muskogee County|Oklahoma
-New Haven|New Haven County|Connecticut
-Newport|Newport County|Rhode Island
-Okanogan|Okanogan County|Washington
+Huntington Beach|Orange County|California
+Newport Beach|Orange County|California
 Orange|Orange County|California
-Orange|Orange County|Virginia
-Pawnee|Pawnee County|Oklahoma
-Payette|Payette County|Idaho
-Peoria|Peoria County|Illinois
-Philadelphia|Philadelphia County|Pennsylvania
-Pierce|Pierce County|Nebraska
-Pocahontas|Pocahontas County|Iowa
-Pratt|Pratt County|Kansas
-Pueblo|Pueblo County|Colorado
-Putnam|Putnam County|Indiana
+Hemet|Riverside County|California
 Riverside|Riverside County|California
-Roanoke|Roanoke County|Virginia
-Rock Island|Rock Island County|Illinois
-Russell|Russell County|Kansas
 Sacramento|Sacramento County|California
-Saginaw|Saginaw County|Michigan
-Salt Lake|Salt Lake County|Utah
+Redlands|San Bernardino County|California
 San Bernardino|San Bernardino County|California
+Coronado|San Diego County|California
 San Diego|San Diego County|California
 San Francisco|San Francisco County|California
+Arroyo Grande|San Luis Obispo County|California
+Shell Beach|San Luis Obispo County|California
 Santa Clara|Santa Clara County|California
-Scott|Scott County|Kansas
-Sheridan|Sheridan County|Wyoming
-Spokane|Spokane County|Washington
-# St. Louis City|St. Louis City County|Missouri
-St. Louis|St. Louis County|Missouri
-Staunton|Staunton County|Virginia
-Tishomingo|Tishomingo County|Mississippi
-Tulsa|Tulsa County|Oklahoma
-Twin Falls|Twin Falls County|Idaho
-Union|Union County|Oregon
-Van Buren|Van Buren County|Iowa
+Dinuba|Tulare County|California
+Port Hueneme|Ventura County|California
 Ventura|Ventura County|California
-Vinton|Vinton County|Ohio
-Wabash|Wabash County|Indiana
-Walla Walla|Walla Walla County|Washington
-Warren|Warren County|Indiana
-Warren|Warren County|Iowa
+Alamosa|Alamosa County|Colorado
+Centennial|Arapahoe County|Colorado
+Englewood|Arapahoe County|Colorado
+Boulder|Boulder County|Colorado
+Denver|Denver County|Colorado
+Parker|Douglas County|Colorado
+Lakewood|Jefferson County|Colorado
+Pueblo|Pueblo County|Colorado
+Frisco|Summit County|Colorado
+Bridgeport|Fairfield County|Connecticut
+Fairfield|Fairfield County|Connecticut
+Norwalk|Fairfield County|Connecticut
+Manchester|Hartford County|Connecticut
+New Haven|New Haven County|Connecticut
+Southbury|New Haven County|Connecticut
+Hockessin|New Castle County|Delaware
+Wilmington|New Castle County|Delaware
+Dagsboro|Sussex County|Delaware
+Laurel|Sussex County|Delaware
+Milton|Sussex County|Delaware
+Slaughter Beach|Sussex County|Delaware
 # Washington|Washington County|District of Columbia
+Malabar|Brevard County|Florida
+Palm Bay|Brevard County|Florida
+Plantation|Broward County|Florida
+Southwest Ranches|Broward County|Florida
+Sunrise|Broward County|Florida
+El Jobean|Charlotte County|Florida
+Marco Island|Collier County|Florida
+Brooksville|Hernando County|Florida
+Mascotte|Lake County|Florida
+Bradenton|Manatee County|Florida
+Ocala|Marion County|Florida
+Jensen Beach|Martin County|Florida
+Orlando|Orange County|Florida
+North Palm Beach|Palm Beach County|Florida
+Haines City|Polk County|Florida
+Lakeland|Polk County|Florida
+Ormond Beach|Volusia County|Florida
+Honolulu|Honolulu County|Hawaii
+Ponderay|Bonner County|Idaho
+Sagle|Bonner County|Idaho
+Grangeville|Idaho County|Idaho
+Kooskia|Idaho County|Idaho
+Athol|Kootenai County|Idaho
+Coeur d'Alene|Kootenai County|Idaho
+Marsing|Owyhee County|Idaho
+Payette|Payette County|Idaho
+Twin Falls|Twin Falls County|Idaho
+Bureau|Bureau County|Illinois
+Sheffield|Bureau County|Illinois
+Champaign|Champaign County|Illinois
+Champaign-Urbana|Champaign County|Illinois
+Clay|Clay County|Illinois
+Sailorspring|Clay County|Illinois
+Humboldt|Coles County|Illinois
+Arlington Heights|Cook County|Illinois
+Berwyn|Cook County|Illinois
+Chicago|Cook County|Illinois
+Elk Grove Village|Cook County|Illinois
+Glenview|Cook County|Illinois
+Hoffman Estates|Cook County|Illinois
+Inverness|Cook County|Illinois
+Northbrook|Cook County|Illinois
+Park Ridge|Cook County|Illinois
+Schaumburg|Cook County|Illinois
+Westchester|Cook County|Illinois
+Robinson|Crawford County|Illinois
+Dekalb|DeKalb County|Illinois
+Hinsdale|DuPage County|Illinois
+Roselle|DuPage County|Illinois
+Canton|Fulton County|Illinois
+Coal City|Grundy County|Illinois
+Iroquois|Iroquois County|Illinois
+Campton Hills|Kane County|Illinois
+Hampshire|Kane County|Illinois
+Bradley|Kankakee County|Illinois
+Kankakee|Kankakee County|Illinois
+Knox|Knox County|Illinois
+Oneida|Knox County|Illinois
+Antioch|Lake County|Illinois
+Beach Park|Lake County|Illinois
+Libertyville|Lake County|Illinois
+Lindenhurst|Lake County|Illinois
+Wadsworth|Lake County|Illinois
+Macon|Macon County|Illinois
+Marengo|McHenry County|Illinois
+Woodstock|McHenry County|Illinois
+Mclean|McLean County|Illinois
+Aledo|Mercer County|Illinois
+Mercer|Mercer County|Illinois
+Mercer|Mercer County|Illinois
+Rochelle|Ogle County|Illinois
+Chillicothe|Peoria County|Illinois
+Laura|Peoria County|Illinois
+Peoria|Peoria County|Illinois
+Coal Valley|Rock Island County|Illinois
+Rock Island|Rock Island County|Illinois
+Carlisle|Scott County|Illinois
+Wyoming|Stark County|Illinois
+Lena|Stephenson County|Illinois
+Pekin|Tazewell County|Illinois
+Tilton|Vermilion County|Illinois
+Lockport|Will County|Illinois
+Crab Orchard|Williamson County|Illinois
+Berne|Adams County|Indiana
+Taylorville|Bartholomew County|Indiana
+Borden|Clark County|Indiana
+Falls of the Ohio|Clark County|Indiana
+Brazil|Clay County|Indiana
+Elkhart|Elkhart County|Indiana
+Goshen|Elkhart County|Indiana
+Greenfield|Hancock County|Indiana
+Brownsburg|Hendricks County|Indiana
+Huntington|Huntington County|Indiana
+Cluenette|Kosciusko County|Indiana
+Sidney|Kosciusko County|Indiana
+Tippicanoe|Kosciusko County|Indiana
+LaGrange|LaGrange County|Indiana
+Laporte|LaPorte County|Indiana
+La Porte|LaPorte County|Indiana
+Alexandria|Madison County|Indiana
+Orestes|Madison County|Indiana
+Camby|Marion County|Indiana
+Fort Benjamin Harrison|Marion County|Indiana
+Miami|Miami County|Indiana
+Bloomington|Monroe County|Indiana
+Rockville|Parke County|Indiana
+Putnam|Putnam County|Indiana
+Rexville|Ripley County|Indiana
+Hamlet|Starke County|Indiana
+Tipton|Tipton County|Indiana
+North Terre Haute|Vigo County|Indiana
+Wabash|Wabash County|Indiana
+Warren|Warren County|Indiana
+Columbia City|Whitley County|Indiana
+Adair|Adair County|Iowa
+Brayton|Audubon County|Iowa
+Waterloo|Black Hawk County|Iowa
+Tipton|Cedar County|Iowa
+West Des Moines|Dallas County|Iowa
+Amana|Iowa County|Iowa
+Oxford|Johnson County|Iowa
+Madison|Madison County|Iowa
+Shenandoah|Page County|Iowa
+James|Plymouth County|Iowa
+Pocahontas|Pocahontas County|Iowa
+Fort Des Moines|Polk County|Iowa
+Mitchellville|Polk County|Iowa
+Redding|Ringgold County|Iowa
+Tingley|Ringgold County|Iowa
+Lenox|Taylor County|Iowa
+Van Buren|Van Buren County|Iowa
+Ottumwa|Wapello County|Iowa
+Warren|Warren County|Iowa
 Washington|Washington County|Iowa
-Wayne|Wayne County|Nebraska
+Great Bend|Barton County|Kansas
+Saffordville|Chase County|Kansas
+Concordia|Cloud County|Kansas
+Ellis|Ellis County|Kansas
+Ponoma|Franklin County|Kansas
+Olathe|Johnson County|Kansas
+Labette|Labette County|Kansas
+Leavenworth|Leavenworth County|Kansas
+Miami|Miami County|Kansas
+Minneapolis|Ottawa County|Kansas
+Pratt|Pratt County|Kansas
+Russell|Russell County|Kansas
+Scott|Scott County|Kansas
+Wickliffe|Ballard County|Kentucky
+Paris|Bourbon County|Kentucky
+Shepherdsville|Bullitt County|Kentucky
+Owensboro|Daviess County|Kentucky
+Harlan|Harlan County|Kentucky
+Eminence|Henry County|Kentucky
+Buechel|Jefferson County|Kentucky
+Louisville|Jefferson County|Kentucky
+London|Laurel County|Kentucky
+Richmond|Madison County|Kentucky
+Rumsey|McLean County|Kentucky
+Crestwood|Oldham County|Kentucky
+Pee Wee Valley|Oldham County|Kentucky
+Vicco|Perry County|Kentucky
+Monticello|Wayne County|Kentucky
 Whitley|Whitley County|Kentucky
-Yakima|Yakima County|Washington
+Oakfield|Aroostook County|Maine
+Brownville|Piscataquis County|Maine
+Glen Burnie|Anne Arundel County|Maryland
+Baltimore|Baltimore County|Maryland
+Frederick|Frederick County|Maryland
+Clinton|Prince George's County|Maryland
+Laurel|Prince George's County|Maryland
+North Chatham|Barnstable County|Massachusetts
+Lawrence|Essex County|Massachusetts
+Brookline|Norfolk County|Massachusetts
+Wrentham|Norfolk County|Massachusetts
+Allston|Suffolk County|Massachusetts
+Roxbury Crossing|Suffolk County|Massachusetts
+Allegan|Allegan County|Michigan
+Bradley|Allegan County|Michigan
+Fennville|Allegan County|Michigan
+Benton Harbor|Berrien County|Michigan
+California|Calhoun County|Michigan
+Black River|Cheboygan County|Michigan
+St. Johns|Clinton County|Michigan
+Hillsdale|Hillsdale County|Michigan
+Jackson|Jackson County|Michigan
+Kalamazoo|Kalamazoo County|Michigan
+Fraser|Macomb County|Michigan
+Mt Clemens|Macomb County|Michigan
+New Baltimore|Macomb County|Michigan
+Sterling Heights|Macomb County|Michigan
+Walhalla|Mason County|Michigan
+Muskegon|Muskegon County|Michigan
+Saginaw|Saginaw County|Michigan
+Saginaw|Saginaw County|Michigan
+Port Huron|St. Clair County|Michigan
+Grosse Pointe Park|Wayne County|Michigan
+Dodge Center|Dodge County|Minnesota
+Freeborn|Freeborn County|Minnesota
+Pine Island|Goodhue County|Minnesota
+St. Paul|Ramsey County|Minnesota
+Duluth|St. Louis County|Minnesota
+Paden|Tishomingo County|Mississippi
+Tishomingo|Tishomingo County|Mississippi
+Kirkville|Adair County|Missouri
+Columbia|Boone County|Missouri
+Whitewater|Cape Girardeau County|Missouri
+Pleasanton|Cass County|Missouri
+Eldorado Springs|Cedar County|Missouri
+Excelsior Springs|Clay County|Missouri
+Osborn|DeKalb County|Missouri
+Hickman Mills|Jackson County|Missouri
+Kansas City|Jackson County|Missouri
+Holden|Johnson County|Missouri
+Macon|Macon County|Missouri
+Mercer|Mercer County|Missouri
+Burlington Junction|Nodaway County|Missouri
+Sikeston|Scott County|Missouri
+Winona|Shannon County|Missouri
+# St. Louis City|St. Louis City County|Missouri
+Ballwin|St. Louis County|Missouri
+Brentwood|St. Louis County|Missouri
+Castle Point|St. Louis County|Missouri
+St. Louis|St. Louis County|Missouri
+Grant City|Worth County|Missouri
+Fort Shaw|Cascade County|Montana
+Glendive|Dawson County|Montana
+Grass Range|Fergus County|Montana
+Missoula|Missoula County|Montana
+Hysham|Treasure County|Montana
+Grand Island|Hall County|Nebraska
+O'Neill|Holt County|Nebraska
+Monroe|Monroe County|Nebraska
+Pierce|Pierce County|Nebraska
+Walthill|Thurston County|Nebraska
+Wayne|Wayne County|Nebraska
+Nashua|Hillsborough County|New Hampshire
+Dover|Strafford County|New Hampshire
+Gonic|Strafford County|New Hampshire
+Garfield|Bergen County|New Jersey
+Ramsey|Bergen County|New Jersey
+Burlington|Burlington County|New Jersey
+Burlington|Burlington County|New Jersey
+Newark|Essex County|New Jersey
+Marlboro|Monmouth County|New Jersey
+West Milford|Passaic County|New Jersey
+Albuquerque|Bernalillo County|New Mexico
+Rio Rancho|Sandoval County|New Mexico
+Bronx|Bronx County|New York
+New York City|Bronx County|New York
+Cortland|Cortland County|New York
+New Hamburg|Dutchess County|New York
+Catskills|Greene County|New York
+Brooklyn|Kings County|New York
+Manhattan|New York County|New York
+New York City|New York County|New York
+Niagara Falls|Niagara County|New York
+Chester|Orange County|New York
+Warwick|Orange County|New York
+Bayside|Queens County|New York
+Oakdale|Suffolk County|New York
+Port Jefferson|Suffolk County|New York
+South Setauket|Suffolk County|New York
+Durham|Durham County|North Carolina
+Selma|Johnston County|North Carolina
+Grand Forks|Grand Forks County|North Dakota
+Ashtabula|Ashtabula County|Ohio
+New Lisbon|Columbiana County|Ohio
+Delaware|Delaware County|Ohio
+Franklin|Franklin County|Ohio
+Grove City|Franklin County|Ohio
+New Athens|Harrison County|Ohio
+Texas|Henry County|Ohio
+Greenfield|Highland County|Ohio
+Lawrence|Lawrence County|Ohio
+Chippewa Lake|Medina County|Ohio
+Medina|Medina County|Ohio
+Zanesville|Muskingum County|Ohio
+Mansfield|Richland County|Ohio
+Fremont|Sandusky County|Ohio
+Canton|Stark County|Ohio
+Akron|Summit County|Ohio
+Newcomerstown|Tuscarawas County|Ohio
+Vinton|Vinton County|Ohio
+Elk City|Beckham County|Oklahoma
+Bennington|Bryan County|Oklahoma
+Clinton|Custer County|Oklahoma
+Weatherford|Custer County|Oklahoma
+Elmore City|Garvin County|Oklahoma
+Lindsay|Garvin County|Oklahoma
+Mangum|Greer County|Oklahoma
+Eldorado|Jackson County|Oklahoma
+Eufaula|McIntosh County|Oklahoma
+Muskogee|Muskogee County|Oklahoma
+Del City|Oklahoma County|Oklahoma
+Oklahoma City|Oklahoma County|Oklahoma
+Miami|Ottawa County|Oklahoma
+Pawnee|Pawnee County|Oklahoma
+Bixby|Tulsa County|Oklahoma
+Tulsa|Tulsa County|Oklahoma
+Dill City|Washita County|Oklahoma
+Gladstone|Clackamas County|Oregon
+Rainier|Columbia County|Oregon
+Gardiner|Douglas County|Oregon
+Umpqua|Douglas County|Oregon
+Hood River|Hood River County|Oregon
+Lincoln City|Lincoln County|Oregon
+Salem|Marion County|Oregon
+Union|Union County|Oregon
+Beaverton|Washington County|Oregon
+Cornelius|Washington County|Oregon
+Johnstown|Cambria County|Pennsylvania
+Shippenburg|Cumberland County|Pennsylvania
+Huntingdon|Huntingdon County|Pennsylvania
+Warriors Mark|Huntingdon County|Pennsylvania
+Lititz|Lancaster County|Pennsylvania
+Newcastle|Lawrence County|Pennsylvania
+Hazelton|Luzerne County|Pennsylvania
+Villanova|Montgomery County|Pennsylvania
+Easton|Northampton County|Pennsylvania
+Philadelphia|Philadelphia County|Pennsylvania
+Philadelphia|Philadelphia County|Pennsylvania
+Newport|Newport County|Rhode Island
+Abbeville|Abbeville County|South Carolina
+Aiken|Aiken County|South Carolina
+Anderson|Anderson County|South Carolina
+Pendleton|Anderson County|South Carolina
+Beaufort|Beaufort County|South Carolina
+Charleston|Charleston County|South Carolina
+Florence|Florence County|South Carolina
+Georgetown|Georgetown County|South Carolina
+Lancaster|Lancaster County|South Carolina
+Gray Court|Laurens County|South Carolina
+Laurens|Laurens County|South Carolina
+Bennettsville|Marlboro County|South Carolina
+Duncan|Spartanburg County|South Carolina
 Yankton|Yankton County|South Dakota
-Yuma|Yuma County|Arizona
+Maryville|Blount County|Tennessee
+Auburn|Cannon County|Tennessee
+Dickson|Dickson County|Tennessee
+Harrison|Hamilton County|Tennessee
+Hixson|Hamilton County|Tennessee
+Athens|McMinn County|Tennessee
+Fort Hood|Bell County|Texas
+Burnet|Burnet County|Texas
+Canyon Lake|Comal County|Texas
+Dallas|Dallas County|Texas
+Mesquite|Dallas County|Texas
+Argyle|Denton County|Texas
+Stafford|Fort Bend County|Texas
+Haskell|Haskell County|Texas
+Hopkins|Hopkins County|Texas
+Commerce|Hunt County|Texas
+Ingram|Kerr County|Texas
+Lampasas|Lampasas County|Texas
+Lubbock|Lubbock County|Texas
+Tahoka|Lynn County|Texas
+Canyon|Randall County|Texas
+Stratford|Sherman County|Texas
+Bedford|Tarrant County|Texas
+Fort Worth|Tarrant County|Texas
+Keller|Tarrant County|Texas
+Hill Air Force Base|Davis County|Utah
+Cedar City|Iron County|Utah
+Salt Lake|Salt Lake County|Utah
+Sandy|Salt Lake County|Utah
+South Jordan|Salt Lake County|Utah
+West Jordan|Salt Lake County|Utah
+West Valley City|Salt Lake County|Utah
+North Ogden|Weber County|Utah
+Arlington|Arlington County|Virginia
+Swoope|Augusta County|Virginia
+Hardy|Bedford County|Virginia
+Culpeper|Culpeper County|Virginia
+Marshall|Fauquier County|Virginia
+Gordonsville|Orange County|Virginia
+Orange|Orange County|Virginia
+Portsmouth|Portsmouth County|Virginia
+Haymarket|Prince William County|Virginia
+Richmond|Richmond County|Virginia
+Roanoke|Roanoke County|Virginia
+Bridgewater|Rockingham County|Virginia
+Harrison|Rockingham County|Virginia
+Edinburg|Shenandoah County|Virginia
+Marion|Smyth County|Virginia
+Staunton|Staunton County|Virginia
+Longview|Cowlitz County|Washington
+Pasco|Franklin County|Washington
+Okanogan|Okanogan County|Washington
+Spokane|Spokane County|Washington
+Walla Walla|Walla Walla County|Washington
+Selah|Yakima County|Washington
+Yakima|Yakima County|Washington
+Ronceverte|Greenbrier County|West Virginia
+Clarksburg|Harrison County|West Virginia
+New Auburn|Chippewa County|Wisconsin
+Menomonie|Dunn County|Wisconsin
+Fond du Lac|Fond du Lac County|Wisconsin
+Twin Lakes|Kenosha County|Wisconsin
+Wausau|Marathon County|Wisconsin
+Janesville|Rock County|Wisconsin
+Delavan|Walworth County|Wisconsin
+Genoa City|Walworth County|Wisconsin
+Brookfield|Waukesha County|Wisconsin
+South Torrington|Goshen County|Wyoming
+Sheridan|Sheridan County|Wyoming
+Moose|Teton County|Wyoming
+Akron|Summit County|Ohio
+Aledo|Mercer County|Illinois
+America|Mitchell County|Georgia
+Bennettsville|Marlboro County|South Carolina
+Berne|Adams County|Indiana
+Boden|Mercer County|Illinois
+Bradenton|Manatee County|Florida
+Brazil|Clay County|Indiana
+Bridgeport|Fairfield County|Connecticut
+Brownville|Piscataquis County|Maine
+Burlington|Burlington County|New Jersey
+Cache Lake|Monroe County|Arkansas
+Canton|Fulton County|Illinois
+Canton|Stark County|Ohio
+Castle Point|Dutchess County|New York
+Catiwassa|Franklin County|Missouri
+Champaign-Urbana|Champaign County|Illinois
+Chicago|Cook County|Illinois
+Chippewa Lake|Mecosta County|Michigan
+Clarksburg|Harrison County|West Virginia
+Cluenette|Kosciusko County|Indiana
+Coeur d'Alene|Kootenai County|Idaho
+Columbia City|St. Clair County|Illinois
+Concordia|Cloud County|Kansas
+Dade|Dade County|Florida
+Davison|Burleigh County|North Dakota
+Duluth|St. Louis County|Minnesota
+East Glenn|Vigo County|Indiana
+Edinburg|Shenandoah County|Virginia
+Elk City|Beckham County|Oklahoma
+Eminence|Henry County|Kentucky
+Fennville|Allegan County|Michigan
+Goldsmith|Tipton County|Indiana
+Goshen|Elkhart County|Indiana
+Grant City|Worth County|Missouri
+Gray Court|Laurens County|South Carolina
+Greenbriar|Fairfax County|Virginia
+Hampshire|Fairfax County|Virginia
+Highpoint|Mahaska County|Iowa
+Hill Air Force Base|Davis County|Utah
+Holden|Johnson County|Missouri
+Huntington Beach|Orange County|California
+Huttig|Union County|Arkansas
+Johnstown|Cambria County|Pennsylvania
+Kansas City|Jackson County|Missouri
+Kosciusko County|Indiana
+Lawrence|Lawrence County|Arkansas
+Lindsay|Garvin County|Oklahoma
+London|Marion County|Tennessee
+Louisville|Jefferson County|Kentucky
+Lumberport|Harrison County|West Virginia
+Mansfield|Richland County|Ohio
+Marengo|Crawford County|Indiana
+Mccracken|McCracken County|Kentucky
+Mercer|Mercer County|Illinois
+Mesquite|Dallas County|Texas
+Middleton|Simpson County|Kentucky
+Monarch|Sheridan County|Wyoming
+Mt Clemens|Macomb County|Michigan
+Mt Zion|Calhoun County|West Virginia
+New York City|Bronx County|New York
+New Albany-Jeffersonville|Clark County|Indiana
+Newcastle|Lawrence County|Pennsylvania
+North Ogden|Weber County|Utah
+O'Neill|Holt County|Nebraska
+Ocala|Marion County|Florida
+Osborn|DeKalb County|Missouri
+Paden|Tishomingo County|Mississippi
+Pendleton|Anderson County|South Carolina
+Philadelphia|Philadelphia County|Pennsylvania
+Pitcher|Ottawa County|Oklahoma
+Pocahontas|Tazewell County|Virginia
+Redding|Ringgold County|Iowa
+Rexville|Ripley County|Indiana
+Rock Island-Moline|Rock Island County|Illinois
+Rocky|Izard County|Arkansas
+Ronceverte|Greenbrier County|West Virginia
+Royal Oak-Ferndale|Oakland County|Michigan
+Rumsey|McLean County|Kentucky
+Saginaw|Saginaw County|Michigan
+Sheffield|Bureau County|Illinois
+St. Paul|Ramsey County|Minnesota
+Tingley|Ringgold County|Iowa
+Vicco|Perry County|Kentucky
+Watson|McCurtain County|Oklahoma
+Wichita|Caddo County|Oklahoma
+Wickliffe|Ballard County|Kentucky
+Winona|Shannon County|Missouri
+Yellowstone|Park County|Wyoming
